@@ -1,7 +1,7 @@
 #######################################################
 # Name: Functional_Category_Abundance.R
 # Author: Ryan Johnson
-# Date Created: 10 July 2018
+# Date Created: 23 July 2018
 # Purpose: Plot the relative abundance of functional 
 #           gene categories for all Humichip samples
 #######################################################
@@ -18,6 +18,10 @@ Humichip <- read_tsv("data/processed/Merged_Humichip_Tidy.tsv",
 
 ## Convert to Relative Abundance and group by Gene Category --------------------------------
 Humichip_RA <- Humichip %>%
+  
+  # Remove the STR_SPE probes
+  filter(gene != "STR_SPE") %>%
+  
   group_by(glomics_ID) %>%
   mutate(Signal_Relative_Abundance = Signal / sum(Signal, na.rm = TRUE)) %>% # convert to relative abundance
   group_by(geneCategory, glomics_ID) %>%

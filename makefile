@@ -82,3 +82,72 @@ results/figures/Humichip_Gene_Abundance.png : data/processed/Merged_Humichip_Tid
 results/figures/Humichip_Gene_Abundance_Visit_Number.png : data/processed/Merged_Humichip_Tidy.tsv\
 			       			            code/Gene_Category_Visit_Number.R
 	R -e "source('code/Gene_Category_Visit_Number.R', echo=T)"
+
+
+
+
+
+
+###################################
+#### Humichip Response Ratios #####
+###################################
+
+
+
+# Humichip Response Ratios for Gene Categories based on Visit Number
+# Depends on:	data/processed/Merged_Humichip.tsv
+# 	     	code/Humichip_ResRatio_Visit.R
+# Produces:	results/figures/Humichip_RespRatio_Visit.png
+results/figures/Humichip_RespRatio_Visit.png : data/processed/Merged_Humichip.tsv\
+					       code/Humichip_ResRatio_Visit.R
+	R -e "source('code/Humichip_ResRatio_Visit.R', echo=T)"
+
+
+
+# Humichip Response Ratios for subcategory1 based on Visit Number
+# Depends on:   data/processed/Merged_Humichip.tsv
+#               code/Humichip_ResRatio_Visit_subcategory1.R
+# Produces:     results/figures/Humichip_RespRatio_Visit_subcateogry1.png
+results/figures/Humichip_RespRatio_Visit_subcategory1.png : data/processed/Merged_Humichip.tsv\
+                                               		    code/Humichip_ResRatio_Visit_subcategory1.R
+	R -e "source('code/Humichip_ResRatio_Visit_subcategory1.R', echo=T)"
+
+
+
+
+# Humichip Response Ratios for subcategory2 based on Visit Number
+# Depends on:   data/processed/Merged_Humichip.tsv
+#               code/Humichip_ResRatio_Visit_subcategory2.R
+# Produces:     results/figures/Humichip_RespRatio_Visit_subcateogry2.png
+results/figures/Humichip_RespRatio_Visit_subcategory2.png : data/processed/Merged_Humichip.tsv\
+                                                            code/Humichip_ResRatio_Visit_subcategory2.R
+	R -e "source('code/Humichip_ResRatio_Visit_subcategory2.R', echo=T)"
+
+
+
+
+
+
+###########################
+#### Species Abundance ####
+###########################
+
+# Heatmap of species present in a specific number of samples
+# Color indicates Normalized Signal Intensity
+# Depends on:	data/processed/Merged_Humichip.tsv
+#		code/Humichip_Species_Abundance.R
+# Produces:	results/figures/Species_Abundance_All_Samples.png
+results/figures/Species_Abundance_All_Samples.png : data/processed/Merged_Humichip.tsv\
+						    code/Humichip_Species_Abundance.R
+	R -e "source('code/Humichip_Species_Abundance.R', echo=T)"
+
+
+# Scatter/Boxplot showing number of species per Visit
+# Depends on:	data/processed/Merged_Humichip.tsv
+#		code/Humichip_NumSpecies_Visit.R
+# Produces:	results/figures/NumSpecies_Visit.png
+results/figures/NumSpecies_Visit.png : data/processed/Merged_Humichip.tsv\
+				       code/Humichip_NumSpecies_Visit.R
+	R -e "source('code/Humichip_NumSpecies_Visit.R', echo=T)"
+
+

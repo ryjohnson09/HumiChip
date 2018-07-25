@@ -17,6 +17,10 @@ Humichip <- read_tsv("data/processed/Merged_Humichip_Tidy.tsv",
 
 ## Convert to Relative abundance and summarize by geneCategory and visit_number ------------------------
 Humichip_RA_visitnumber <- Humichip %>%
+  
+  # Remove the STR_SPE probes
+  filter(gene != "STR_SPE") %>%
+  
   group_by(glomics_ID) %>%
   mutate(Signal_Relative_Abundance = Signal / sum(Signal, na.rm = TRUE)) %>% # Relative Abundance Calc
   group_by(geneCategory, glomics_ID, visit_number) %>%

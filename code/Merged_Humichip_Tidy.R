@@ -1,7 +1,7 @@
 ####################################################
 # Name: Merged_Humichip_Tidy.R
 # Author: Ryan Johnson
-# Date Created: 8 July 2018
+# Date Created: 23 July 2018
 # Purpose: Take the merged Humichip data and convert
 #          it to long/tidy format
 ####################################################

@@ -48,6 +48,24 @@ data/processed/Merged_Humichip_Tidy.tsv : data/processed/Merged_humichip.tsv\
 
 
 
+# Create Clinical Metadata Table Extracted from TrEAT DB
+# Depends on:   data/processed/Merged_humichip.tsv
+#               data/raw/TrEAT_Merge_2018.06.27.XLSX
+#               data/raw/TrEAT_Merge_DataDictionary_2018.06.27.XLSX
+#               data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx
+#               code/Create_Clin_Metadata.R
+# Produces:     data/processed/TrEAT_Clinical_Metadata_tidy.csv
+data/processed/TrEAT_Clinical_Metadata_tidy.csv : data/processed/Merged_humichip.tsv\
+                                                  data/raw/TrEAT_Merge_2018.06.27.XLSX\
+                                                  data/raw/TrEAT_Merge_DataDictionary_2018.06.27.XLSX\
+                                                  data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
+                                                  code/Create_Clin_Metadata.R
+	R -e "source('code/Create_Clin_Metadata.R', echo=T)"
+
+
+
+
+
 
 # Visualize the Humichip Signal Distribution
 # Depends on:	data/processed/Merged_Humichip_Tidy.tsv

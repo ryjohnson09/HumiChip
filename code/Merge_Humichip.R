@@ -67,9 +67,9 @@ humichip_data <- humichip_data %>%
 
 
 #!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
-# Remove Duplicates ****MAY NEED TO BE CHANGED******* 
+# Remove Duplicates ****Remove sample with fewer values******* 
 humichip_data <- humichip_data %>%
-  select(-X75, -X193, -X248)
+  select(-X75, -X193.1, -X248)
 
 colnames(humichip_data) <- str_replace(string = colnames(humichip_data), 
                                       pattern = "\\.1", 

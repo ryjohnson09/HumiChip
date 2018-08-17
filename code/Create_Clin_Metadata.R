@@ -193,7 +193,14 @@ treat_clin <- treat_clin %>%
                   ifelse(Other_symptom_present_at_presentation == 1, "Yes", NA))) %>%
   
   mutate(Occult_blood_result =
-           ifelse(Occult_blood_result == "N/A", NA, Occult_blood_result))
+           ifelse(Occult_blood_result == "N/A", NA, Occult_blood_result)) %>%
+  
+  
+  #############################
+  ### Add in custom columns ###
+  #############################
+  mutate(LLS_severity = 
+           ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation > 5, "severe", "mild"))
          
 
 

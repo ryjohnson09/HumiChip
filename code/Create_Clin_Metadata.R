@@ -200,11 +200,10 @@ treat_clin <- treat_clin %>%
   ### Add in custom columns ###
   #############################
   mutate(LLS_severity = 
-           ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation > 5, "severe", "mild"))
+    ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation <= 1, "mild",
+    ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation %in% c(2,3,4), "moderate",
+    ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation >= 5, "severe", NA))))
          
-
-
-
 
 ##########################
 ### Pathogen Detection ###

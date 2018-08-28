@@ -1,34 +1,39 @@
-################################################
-# Name: ordination_plot_functions.R
+##################################################
+# Name: ordination_function.R
 # Date Created: 27 August 2018
 # Author: Ryan Johnson
-# Purpose: This script will contain functions
-#   and commands to generate various ordination
-#   plots for the humichip data.
-################################################
+# Purpose: This script  contains a function 
+#   that can be used to add ordination coordinates 
+#   to the treat_DB based on the humichip data.
+##################################################
 
-## Ordination Function
-humichip_ord <- function(humichip_path,
+
+humichip_ord <- function(humichip_path, 
                          ID_decoder_path,
                          treat_DB_path,
-                         keep_unmatched_patients = TRUE,
-                         remove_LOP_PLA = FALSE,
+                         keep_unmatched_patients = TRUE, # If true, all patients included
+                                                         # If false, only patients with matched
+                                                         # designated visit samples included
+                         
+                         remove_LOP_PLA = FALSE,  # If true, patient in the LOP and PLA tx groups removed
                          visit_numbers = c(1,4,5),
-                         treatment_groups = "All",
-                         pathogen_groups = "All",
-                         probe_type = "All",
-                         gene_category = "All",
-                         ord_type = "PCoA"
-                         ){
+                         treatment_groups = "All", # RIF, LEV, or AZI
+                         pathogen_groups = "All", # either bug_taq, bug_culture, or bug_both, 
+                                                  # All = all patients included
+                         probe_type = "All", # Functional, Strain/Species, or All
+                         gene_category = "All", # If probe_type = "Functional", can further select
+                                                # by gene_cagtegory (eg. Virulence)
+                         ord_type = "PCoA" # PCoA, PCA, or DCA
+){
   
   ## Libraries ---------------------------------------------------------------
   library(tidyverse)
   library(vegan)
   library(ape)
   library(ggExtra)
- 
   
-   ## Dependencies Read In --------------------------------------------------
+  
+  ## Dependencies Read In --------------------------------------------------
   ID_decoder <- suppressMessages(suppressWarnings(read_csv(ID_decoder_path)))
   treat <- suppressMessages(suppressWarnings(read_csv(treat_DB_path)))
   humichip <- suppressMessages(suppressWarnings(read_tsv(humichip_path)))
@@ -68,12 +73,12 @@ humichip_ord <- function(humichip_path,
                                    "subcategory2", matched_glomics))
     
     rm(matched_glomics, matched_samples)
-      
-    } else if (keep_unmatched_patients == TRUE){
-      humichip <- humichip
-    } else {
-      stop("Error when subsetting matched/unmatched patients")
-    }
+    
+  } else if (keep_unmatched_patients == TRUE){
+    humichip <- humichip
+  } else {
+    stop("Error when subsetting matched/unmatched patients")
+  }
   
   
   # Remove samples from humichip that are in the LOP & PLA tx groups
@@ -230,132 +235,18 @@ humichip_ord <- function(humichip_path,
   
   
   # Merge into treat
-    
+  
   treat <- ord_coords %>%
     left_join(., treat, by = c("glomics_ID")) %>%
     
     # Factor columns
     mutate(visit_number = factor(visit_number)) %>%
     mutate(Impact_of_illness_on_activity_level = factor(Impact_of_illness_on_activity_level))
-
-    
+  
+  
   # Return object
   
   humichip_return <- list(humichip_data = treat)
   humichip_return$prop_exp <- prop_exp
   humichip_return
 }
-
-
-
-
-#########################################
-ord_plot <- function(ord_object,
-                     ord_type, 
-                     color_points_by = visit_number,
-                     plot_title = "",
-                     y_lab = "", 
-                     x_lab = ""){
-  
-  if (ord_type == "PCoA"){
-    x_axis = "Axis.1"
-    y_axis = "Axis.2"
-  } else if (ord_type == "PCA"){
-    x_axis = "PC1"
-    y_axis = "PC2"
-  } else if (ord_type == "DCA"){
-    x_axis = "DCA1"
-    y_axis = "DCA2"
-  } else {
-    stop("Invalid x/y axes")
-  }
-  
-  ord_plot <- ggplot(ord_object$humichip_data, 
-                      aes_string(x = x_axis, y = y_axis)) +
-    xlab(x_lab) +
-    ylab(y_lab) +
-    geom_point(aes_string(color = color_points_by), alpha = 0.8, size = 6) +
-    geom_point(pch = 21, size = 6, alpha = 0.6) +
-    ggtitle(plot_title) + 
-    theme_minimal() +
-    theme(
-      axis.title.x = element_text(size = 14), 
-      axis.text.x = element_text(size = 12, hjust = 1),
-      axis.text.y = element_text(size = 12),
-      axis.title.y = element_text(size = 14), 
-      plot.title = element_text(size = 16, face = "bold"),
-      legend.text = element_text(size = 12),
-      legend.title = element_blank())
-  ggMarginal(ord_plot, groupFill = TRUE, groupColour = TRUE)
-}
-
-
-
-###### Generate Figures #########################
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-
-pcoa_LLSseverity <- humichip_ord(humichip_path = "data/processed/Merged_humichip.tsv",
-                          ID_decoder_path = "data/processed/ID_Decoder.csv",
-                          treat_DB_path = "data/processed/TrEAT_Clinical_Metadata_tidy.csv",
-                          remove_LOP_PLA = TRUE,
-                          visit_numbers = 1,
-                          treatment_groups = "All",
-                          pathogen_groups = "All",
-                          probe_type = "All",
-                          gene_category = "All",
-                          ord_type = "PCoA")
-
-png("results/figures/ordination_plots/pcoa_LLS_severity_visit1.png", height = 8, width = 9, units = "in", res = 300)
-ord_plot(ord_object = pcoa_LLSseverity, 
-         ord_type = "PCoA", 
-         color_points_by = "LLS_severity", 
-         plot_title = "PCoA Analysis", 
-         x_lab = paste0("PCoA1 (", round(pcoa_LLSseverity$prop_exp[1], 2), "%)"),
-         y_lab = paste0("PCoA2 (", round(pcoa_LLSseverity$prop_exp[2], 2), "%)"))
-dev.off()
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-
-pcoa_impact <- humichip_ord(humichip_path = "data/processed/Merged_humichip.tsv",
-                                 ID_decoder_path = "data/processed/ID_Decoder.csv",
-                                 treat_DB_path = "data/processed/TrEAT_Clinical_Metadata_tidy.csv",
-                                 remove_LOP_PLA = TRUE,
-                                 visit_numbers = 1,
-                                 treatment_groups = "All",
-                                 pathogen_groups = "All",
-                                 probe_type = "All",
-                                 gene_category = "All",
-                                 ord_type = "PCoA")
-
-png("results/figures/ordination_plots/pcoa_impact_visit1.png", height = 8, width = 9, units = "in", res = 300)
-ord_plot(ord_object = pcoa_impact, 
-         ord_type = "PCoA", 
-         color_points_by = "Impact_of_illness_on_activity_level", 
-         plot_title = "PCoA Analysis", 
-         x_lab = paste0("PCoA1 (", round(pcoa_impact$prop_exp[1], 2), "%)"),
-         y_lab = paste0("PCoA2 (", round(pcoa_impact$prop_exp[2], 2), "%)"))
-dev.off()
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
-
-RIF <- humichip_ord(humichip_path = "data/processed/Merged_humichip.tsv",
-                    ID_decoder_path = "data/processed/ID_Decoder.csv",
-                    treat_DB_path = "data/processed/TrEAT_Clinical_Metadata_tidy.csv",
-                    keep_unmatched_patients = FALSE,
-                    remove_LOP_PLA = TRUE,
-                    visit_numbers = c(1,5),
-                    treatment_groups = "RIF",
-                    pathogen_groups = "All",
-                    probe_type = "All",
-                    gene_category = "All",
-                    ord_type = "PCoA")
-
-png("results/figures/ordination_plots/pcoa_rif.png", height = 8, width = 9, units = "in", res = 300)
-ord_plot(ord_object = RIF, 
-         ord_type = "PCoA", 
-         color_points_by = "visit_number", 
-         plot_title = "PCoA Analysis", 
-         x_lab = paste0("PCoA1 (", round(RIF$prop_exp[1], 2), "%)"),
-         y_lab = paste0("PCoA2 (", round(RIF$prop_exp[2], 2), "%)"))
-dev.off()

@@ -169,3 +169,62 @@ results/figures/NumSpecies_Visit.png : data/processed/Merged_Humichip.tsv\
 	R -e "source('code/Humichip_NumSpecies_Visit.R', echo=T)"
 
 
+
+
+
+####################################
+#### Ordination Plots/Functions ####
+####################################
+
+# Humichip ordination plots and functions. Will place all figures
+# in the results/figures/ordination_plots directory
+# Depends on:	data/processed/Merged_Humichip.tsv
+#		data/processed/ID_Decoder.csv
+#		data/processed/TrEAT_Clinical_Metadata_tidy.csv
+#		code/ordination_plots/ordination_function.R
+#		code/ordination_plots/ordination_plot.R
+#		code/ordination_plots/*.R
+# Produces:	results/figures/ordination_plots/*.png
+results/figures/ordination_plots/pcoa_LLS_severity_visit1.png : data/processed/Merged_Humichip.tsv\
+                				                data/processed/ID_Decoder.csv\
+                               					data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                               					code/ordination_plots/ordination_function.R\
+                               					code/ordination_plots/ordination_plot.R\
+        	                       				code/ordination_plots/pcoa_LLS_severity_visit1.R
+	R -e "source('code/ordination_plots/pcoa_LLS_severity_visit1.R', echo=T)"
+
+
+results/figures/ordination_plots/pcoa_impact_visit1.png : data/processed/Merged_Humichip.tsv\
+                                                          data/processed/ID_Decoder.csv\
+                                                          data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                                          code/ordination_plots/ordination_function.R\
+                                                          code/ordination_plots/ordination_plot.R\
+                                                          code/ordination_plots/pcoa_impact_visit1.R
+	R -e "source('code/ordination_plots/pcoa_impact_visit1.R', echo=T)"
+
+
+results/figures/ordination_plots/pcoa_rif_visit15.png : data/processed/Merged_Humichip.tsv\
+                                                        data/processed/ID_Decoder.csv\
+                                                        data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                                        code/ordination_plots/ordination_function.R\
+                                                        code/ordination_plots/ordination_plot.R\
+                                                        code/ordination_plots/pcoa_rif_visit15.R
+	R -e "source('code/ordination_plots/pcoa_rif_visit15.R', echo=T)"
+
+
+results/figures/ordination_plots/pcoa_lev_visit15.png : data/processed/Merged_Humichip.tsv\
+                                                        data/processed/ID_Decoder.csv\
+                                                        data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                                        code/ordination_plots/ordination_function.R\
+                                                        code/ordination_plots/ordination_plot.R\
+                                                        code/ordination_plots/pcoa_lev_visit15.R
+	R -e "source('code/ordination_plots/pcoa_lev_visit15.R', echo=T)"
+
+
+results/figures/ordination_plots/pcoa_azi_visit15.png : data/processed/Merged_Humichip.tsv\
+                                                        data/processed/ID_Decoder.csv\
+                                                        data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                                        code/ordination_plots/ordination_function.R\
+                                                        code/ordination_plots/ordination_plot.R\
+                                                        code/ordination_plots/pcoa_azi_visit15.R
+	R -e "source('code/ordination_plots/pcoa_azi_visit15.R', echo=T)"

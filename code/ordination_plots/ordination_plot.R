@@ -10,6 +10,7 @@
 ord_plot <- function(ord_object, # Results from running `ordination_function.R`
                      ord_type, # PCoA, PCA, or DCA
                      color_points_by = visit_number,
+                     connect_points_by_studyID = FALSE,
                      plot_title = "",
                      y_lab = "", 
                      x_lab = ""){
@@ -49,5 +50,11 @@ ord_plot <- function(ord_object, # Results from running `ordination_function.R`
       plot.title = element_text(size = 16, face = "bold"),
       legend.text = element_text(size = 12),
       legend.title = element_blank())
+  
+  # Connet points?
+  if(connect_points_by_studyID == TRUE){
+    ord_plot <- ord_plot + geom_line(aes(group = STUDY_ID), linetype = 1)
+  }
+  
   ggMarginal(ord_plot, groupFill = TRUE, groupColour = TRUE)
 }

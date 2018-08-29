@@ -20,10 +20,11 @@ LEV <- humichip_ord(humichip_path = "data/processed/Merged_humichip.tsv",
                     gene_category = "All",
                     ord_type = "PCoA")
 
-png("results/figures/ordination_plots/pcoa_lev.png", height = 8, width = 9, units = "in", res = 300)
+png("results/figures/ordination_plots/pcoa_lev_visit15.png", height = 8, width = 9, units = "in", res = 300)
 ord_plot(ord_object = LEV, 
          ord_type = "PCoA", 
          color_points_by = "visit_number", 
+         connect_points_by_studyID = TRUE,
          plot_title = "PCoA Analysis", 
          x_lab = paste0("PCoA1 (", round(LEV$prop_exp[1], 2), "%)"),
          y_lab = paste0("PCoA2 (", round(LEV$prop_exp[2], 2), "%)"))

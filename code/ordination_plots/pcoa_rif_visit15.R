@@ -8,7 +8,6 @@
 source("code/ordination_plots/ordination_function.R")
 source("code/ordination_plots/ordination_plot.R")
 
-
 RIF <- humichip_ord(humichip_path = "data/processed/Merged_humichip.tsv",
                     ID_decoder_path = "data/processed/ID_Decoder.csv",
                     treat_DB_path = "data/processed/TrEAT_Clinical_Metadata_tidy.csv",
@@ -25,6 +24,7 @@ png("results/figures/ordination_plots/pcoa_rif_visit15.png", height = 8, width =
 ord_plot(ord_object = RIF, 
          ord_type = "PCoA", 
          color_points_by = "visit_number", 
+         connect_points_by_studyID = TRUE,
          plot_title = "PCoA Analysis", 
          x_lab = paste0("PCoA1 (", round(RIF$prop_exp[1], 2), "%)"),
          y_lab = paste0("PCoA2 (", round(RIF$prop_exp[2], 2), "%)"))

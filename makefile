@@ -114,19 +114,40 @@ results/figures/Humichip_Gene_Abundance_Visit_Number.png : data/processed/Merged
 
 # Humichip Response Ratios for Gene Categories based on Visit Number
 # Depends on:	data/processed/Merged_Humichip.tsv
+#		data/processed/ID_Decoder.csv
+#               data/processed/TrEAT_Clinical_Metadata_tidy.csv
 # 	     	code/Humichip_ResRatio_Visit.R
 # Produces:	results/figures/Humichip_RespRatio_Visit.png
 results/figures/Humichip_RespRatio_Visit.png : data/processed/Merged_Humichip.tsv\
+					       data/processed/ID_Decoder.csv\
+					       data/processed/TrEAT_Clinical_Metadata_tidy.csv\
 					       code/Humichip_ResRatio_Visit.R
 	R -e "source('code/Humichip_ResRatio_Visit.R', echo=T)"
+
+
+# Humichip Response Ratios for Genes based on Visit Number
+# Depends on:   data/processed/Merged_Humichip.tsv
+#               data/processed/ID_Decoder.csv
+#               data/processed/TrEAT_Clinical_Metadata_tidy.csv
+#               code/Humichip_ResRatio_Visit.R
+# Produces:     results/figures/Humichip_RespRatio_Visit_gene.png
+results/figures/Humichip_RespRatio_Visit_gene.png : data/processed/Merged_Humichip.tsv\
+                                             	    data/processed/ID_Decoder.csv\
+                                              	    data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                              	     code/Humichip_ResRatio_Visit_gene.R
+	R -e "source('code/Humichip_ResRatio_Visit_gene.R', echo=T)"
 
 
 
 # Humichip Response Ratios for subcategory1 based on Visit Number
 # Depends on:   data/processed/Merged_Humichip.tsv
+#               data/processed/ID_Decoder.csv
+#               data/processed/TrEAT_Clinical_Metadata_tidy.csv
 #               code/Humichip_ResRatio_Visit_subcategory1.R
 # Produces:     results/figures/Humichip_RespRatio_Visit_subcateogry1.png
 results/figures/Humichip_RespRatio_Visit_subcategory1.png : data/processed/Merged_Humichip.tsv\
+	                                                    data/processed/ID_Decoder.csv\
+             	 	                                    data/processed/TrEAT_Clinical_Metadata_tidy.csv\
                                                		    code/Humichip_ResRatio_Visit_subcategory1.R
 	R -e "source('code/Humichip_ResRatio_Visit_subcategory1.R', echo=T)"
 
@@ -135,9 +156,13 @@ results/figures/Humichip_RespRatio_Visit_subcategory1.png : data/processed/Merge
 
 # Humichip Response Ratios for subcategory2 based on Visit Number
 # Depends on:   data/processed/Merged_Humichip.tsv
+#               data/processed/ID_Decoder.csv
+#               data/processed/TrEAT_Clinical_Metadata_tidy.csv
 #               code/Humichip_ResRatio_Visit_subcategory2.R
 # Produces:     results/figures/Humichip_RespRatio_Visit_subcateogry2.png
 results/figures/Humichip_RespRatio_Visit_subcategory2.png : data/processed/Merged_Humichip.tsv\
+                                                            data/processed/ID_Decoder.csv\
+                                                            data/processed/TrEAT_Clinical_Metadata_tidy.csv\
                                                             code/Humichip_ResRatio_Visit_subcategory2.R
 	R -e "source('code/Humichip_ResRatio_Visit_subcategory2.R', echo=T)"
 

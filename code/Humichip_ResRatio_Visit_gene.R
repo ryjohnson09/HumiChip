@@ -1,8 +1,8 @@
 ######################################################################
-# Name: Humichip_ResRatio_Visit.R
+# Name: Humichip_ResRatio_Visit_gene.R
 # Author: Ryan Johnson
 # Date Created: 24 July 2018
-# Purpose: Determine which genes categories are significantly altered
+# Purpose: Determine which genes are significantly altered
 #          from visit 1 to visit 4 and 5 by calculating
 #          response ratios with 95% CI using relative
 #          abundance.
@@ -74,25 +74,25 @@ Humichip_RR <- Humichip %>%
   mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
   
   # Remove columns not needed
-  select(-gene, -Genbank.ID, -subcategory1,  
+  select(-geneCategory, -Genbank.ID, -subcategory1,  
          -Signal, -species, -subcategory2, -annotation, -lineage) %>%
   
-  # Remove any rows with NA in the signal category or geneCategory
+  # Remove any rows with NA in the signal category or gene
   filter(!is.na(Signal_Relative_Abundance)) %>%
-  filter(!is.na(geneCategory)) %>%
-
+  filter(!is.na(gene)) %>%
+  
   
   # Calculate mead, sd, and counts (n)
-  group_by(geneCategory, glomics_ID, visit_number) %>%
-  summarise(geneCategory_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
-  group_by(geneCategory, visit_number) %>%
-  summarise(mean_signal = mean(geneCategory_relative_abundance),
-            sd_signal = sd(geneCategory_relative_abundance),
-            n = sum(!is.na(geneCategory_relative_abundance))) %>%
-
-
+  group_by(gene, glomics_ID, visit_number) %>%
+  summarise(gene_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
+  group_by(gene, visit_number) %>%
+  summarise(mean_signal = mean(gene_relative_abundance),
+            sd_signal = sd(gene_relative_abundance),
+            n = sum(!is.na(gene_relative_abundance))) %>%
+  
+  
   # Spread the signal mean by visit number
-  group_by(geneCategory) %>%
+  group_by(gene) %>%
   spread(visit_number, mean_signal) %>%
   
   # Rename visit mean columns
@@ -109,9 +109,9 @@ Humichip_RR <- Humichip %>%
   mutate(n_visit5 = ifelse(!is.na(Visit5_mean), n, NA)) %>%
   select(-sd_signal, -n) %>%
   
-
+  
   # Compress NAs
-  group_by(geneCategory) %>%
+  group_by(gene) %>%
   summarise_all(funs(sum(., na.rm = T))) %>%
   
   # Must have at least 10 observations in each subcategory
@@ -138,12 +138,24 @@ Humichip_RR <- Humichip %>%
 
 # Make Tidy for plotting
 Humichip_RR_tidy <- Humichip_RR %>%
-  select(geneCategory, RR_41, RR_51, CI95_41, CI95_51) %>%
-  gather(key = RR_group, value = RR, -geneCategory, -CI95_41, -CI95_51) %>%
-  gather(key = CI_group, value = CI95, -geneCategory, -RR_group, -RR) %>%
+  select(gene, RR_41, RR_51, CI95_41, CI95_51) %>%
+  gather(key = RR_group, value = RR, -gene, -CI95_41, -CI95_51) %>%
+  gather(key = CI_group, value = CI95, -gene, -RR_group, -RR) %>%
   mutate(keepers = ifelse(str_extract(RR_group, "..$") == str_extract(CI_group, "..$"), "yes", NA)) %>%
   filter(!is.na(keepers)) %>%
   select(-keepers, -CI_group)
+
+# Only include instances where the 95% CI does not overlap 0
+genes_no_overlap_0 <- Humichip_RR_tidy %>%
+  mutate(overlap_zero = ifelse(0 > RR - CI95 & 0 < RR + CI95, TRUE, FALSE)) %>%
+  filter(overlap_zero == FALSE) %>%
+  distinct(gene) %>%
+  pull(gene)
+
+Humichip_RR_tidy <- Humichip_RR_tidy %>%
+  filter(gene %in% genes_no_overlap_0)
+
+rm(genes_no_overlap_0)
 
 
 # Plot
@@ -153,14 +165,14 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
   
   # points and error bar
-  geom_point(aes(x = geneCategory, y = RR, color = RR_group), size = 4, position = dodge) +
-  geom_errorbar(aes(ymin = RR - CI95, ymax = RR + CI95, x = geneCategory, color = RR_group), position = dodge) +
+  geom_point(aes(x = gene, y = RR, color = RR_group), size = 4, position = dodge) +
+  geom_errorbar(aes(ymin = RR - CI95, ymax = RR + CI95, x = gene, color = RR_group), position = dodge) +
   
   scale_color_manual(values = c("black", "red"), labels = c("Visit 1 vs 4", "Visit 1 vs 5")) +
   
   labs(title = "Response Ratio",
-       subtitle = "Gene Category by Visit",
-       x = "Gene Category",
+       subtitle = "Genes by Visit",
+       x = "Gene Name",
        y = "Response Ratio",
        color = "Visit Comparisons",
        caption = "Only considering samples from patients that provided samples at all 3 time points") +
@@ -176,4 +188,4 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
     plot.caption = element_text(hjust = 0.5)
   )
 
-ggsave("results/figures/Humichip_RespRatio_Visit.png", height = 10, width = 10)
+ggsave("results/figures/Humichip_RespRatio_Visit_gene.png", height = 5, width = 12)

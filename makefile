@@ -167,7 +167,17 @@ results/figures/Humichip_RespRatio_Visit_subcategory2.png : data/processed/Merge
 	R -e "source('code/Humichip_ResRatio_Visit_subcategory2.R', echo=T)"
 
 
-
+# Humichip Response Ratios for species based on Visit Number
+# Depends on:   data/processed/Merged_Humichip.tsv
+#               data/processed/ID_Decoder.csv
+#               data/processed/TrEAT_Clinical_Metadata_tidy.csv
+#               code/Humichip_ResRatio_Visit_species.R
+# Produces:     results/figures/Humichip_RespRatio_Visit_species.png
+results/figures/Humichip_RespRatio_Visit_species.png : data/processed/Merged_Humichip.tsv\
+                                                            data/processed/ID_Decoder.csv\
+                                                            data/processed/TrEAT_Clinical_Metadata_tidy.csv\
+                                                            code/Humichip_ResRatio_Visit_species.R
+	R -e "source('code/Humichip_ResRatio_Visit_species.R', echo=T)"
 
 
 

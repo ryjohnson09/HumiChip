@@ -66,12 +66,12 @@ rm(matched_glomics, matched_samples)
 
 
 Humichip_RR <- Humichip %>%
+    
+  group_by(glomics_ID) %>%
+  mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
   
   # Remove the STR_SPE probes
   filter(gene != "STR_SPE") %>%
-  
-  group_by(glomics_ID) %>%
-  mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
   
   # Remove columns not needed
   select(-geneCategory, -Genbank.ID, -gene,  
@@ -157,6 +157,12 @@ Humichip_RR_tidy <- Humichip_RR_tidy %>%
 
 rm(subcategory1_no_overlap_0)
 
+# Factor for plot
+Humichip_RR_tidy$subcategory1 <- factor(Humichip_RR_tidy$subcategory1, 
+                                    levels = rev(sort(unique(Humichip_RR_tidy$subcategory1))))
+Humichip_RR_tidy$RR_group <- factor(Humichip_RR_tidy$RR_group,
+                                    levels = c("RR_51", "RR_41"))
+
 
 # Plot
 dodge <- position_dodge(width = 0.75)
@@ -168,7 +174,9 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
   geom_point(aes(x = subcategory1, y = RR, color = RR_group), size = 4, position = dodge) +
   geom_errorbar(aes(ymin = RR - CI95, ymax = RR + CI95, x = subcategory1, color = RR_group), position = dodge) +
   
-  scale_color_manual(values = c("black", "red"), labels = c("Visit 1 vs 4", "Visit 1 vs 5")) +
+  scale_color_manual(values = c("red", "black"), 
+                     labels = c("Visit 1 vs 5", "Visit 1 vs 4"),
+                     guide = guide_legend(reverse = TRUE)) +
   
   labs(title = "Response Ratio",
        subtitle = "Subcategory1 by Visit",
@@ -188,5 +196,4 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
     plot.caption = element_text(hjust = 0.5)
   )
 
-
-ggsave("results/figures/Humichip_RespRatio_Visit_subcategory1.png", height = 5, width = 6)
+ggsave("results/figures/Humichip_RespRatio_Visit_subcategory1.png", height = 5, width = 8)

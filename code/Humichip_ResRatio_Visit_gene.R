@@ -67,11 +67,11 @@ rm(matched_glomics, matched_samples)
 
 Humichip_RR <- Humichip %>%
   
-  # Remove the STR_SPE probes
-  filter(gene != "STR_SPE") %>%
-  
   group_by(glomics_ID) %>%
   mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
+  
+  # Remove the STR_SPE probes
+  filter(gene != "STR_SPE") %>%
   
   # Remove columns not needed
   select(-geneCategory, -Genbank.ID, -subcategory1,  
@@ -157,6 +157,12 @@ Humichip_RR_tidy <- Humichip_RR_tidy %>%
 
 rm(genes_no_overlap_0)
 
+# Factor for plot
+Humichip_RR_tidy$gene <- factor(Humichip_RR_tidy$gene, 
+                             levels = rev(sort(unique(Humichip_RR_tidy$gene))))
+Humichip_RR_tidy$RR_group <- factor(Humichip_RR_tidy$RR_group,
+                                    levels = c("RR_51", "RR_41"))
+
 
 # Plot
 dodge <- position_dodge(width = 0.75)
@@ -168,7 +174,9 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
   geom_point(aes(x = gene, y = RR, color = RR_group), size = 4, position = dodge) +
   geom_errorbar(aes(ymin = RR - CI95, ymax = RR + CI95, x = gene, color = RR_group), position = dodge) +
   
-  scale_color_manual(values = c("black", "red"), labels = c("Visit 1 vs 4", "Visit 1 vs 5")) +
+  scale_color_manual(values = c("red", "black"), 
+                     labels = c("Visit 1 vs 5", "Visit 1 vs 4"),
+                     guide = guide_legend(reverse = TRUE)) +
   
   labs(title = "Response Ratio",
        subtitle = "Genes by Visit",

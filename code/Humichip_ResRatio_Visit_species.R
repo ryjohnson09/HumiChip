@@ -215,5 +215,4 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
     plot.caption = element_text(hjust = 0.5)
   )
 
-Humichip_RR_plot
 ggsave("results/figures/Humichip_RespRatio_Visit_species.png", height = 9, width = 12)

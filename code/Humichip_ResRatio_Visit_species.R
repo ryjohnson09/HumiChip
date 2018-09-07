@@ -9,15 +9,17 @@
 ######################################################################
 
 library(tidyverse)
+library(readxl)
 
 # Read in merged Humichip Data
 Humichip <- read_tsv("data/processed/Merged_Humichip_Tidy.tsv", 
                      col_types = "cciccccccccd",
                      progress = TRUE)
 
-# ID_Decoder
+# ID_Decoder, treat, probe counts
 ID_decoder <- suppressWarnings(suppressMessages(read_csv("data/processed/ID_Decoder.csv")))
 treat <- suppressWarnings(suppressMessages(read_csv("data/processed/TrEAT_Clinical_Metadata_tidy.csv")))
+#probe_counts <- suppressWarnings(suppressMessages(read_xlsx("data/raw/Species_probe_numbers.xlsx")))
 
 # Filter ID_decoder to only include samples in geochip
 ID_decoder <- ID_decoder %>%
@@ -64,6 +66,10 @@ Humichip <- Humichip %>%
 rm(matched_glomics, matched_samples)
 
 
+# Set thresholds
+probes_per_species <- 7
+patients_per_species <- 10
+
 
 Humichip_RR <- Humichip %>%
   
@@ -88,8 +94,12 @@ Humichip_RR <- Humichip %>%
             n = n(),
             sd_signal = sd(Signal_Relative_Abundance)) %>%
   
-  # Remove species with less than 5 probes
-  filter(n >= 10) %>%
+  # Merge in the probe counts
+  #left_join(., probe_counts, by = c("species" = "SPECIES")) 
+  
+  ### For each sample, if a species does not have at least __ probes associated with it,
+  ### it will not be considered present
+  filter(n >= probes_per_species) %>%
 
   # Spread the signal mean by visit number
   group_by(species) %>%
@@ -104,20 +114,27 @@ Humichip_RR <- Humichip %>%
   mutate(sd_visit1 = ifelse(!is.na(Visit1_mean), sd_signal, NA)) %>%
   mutate(sd_visit4 = ifelse(!is.na(Visit4_mean), sd_signal, NA)) %>%
   mutate(sd_visit5 = ifelse(!is.na(Visit5_mean), sd_signal, NA)) %>%
-  mutate(n_visit1 = ifelse(!is.na(Visit1_mean), n, NA)) %>%
-  mutate(n_visit4 = ifelse(!is.na(Visit4_mean), n, NA)) %>%
-  mutate(n_visit5 = ifelse(!is.na(Visit5_mean), n, NA)) %>%
+  #mutate(n_visit1 = ifelse(!is.na(Visit1_mean), n, NA)) %>%
+  #mutate(n_visit4 = ifelse(!is.na(Visit4_mean), n, NA)) %>%
+  #mutate(n_visit5 = ifelse(!is.na(Visit5_mean), n, NA)) %>%
   select(-sd_signal, -n, -glomics_ID) %>%
+  
+  # get n_visit counts
+  group_by(species) %>%
+  mutate(n_visit1 = sum(!is.na(Visit1_mean))) %>%
+  mutate(n_visit4 = sum(!is.na(Visit4_mean))) %>%
+  mutate(n_visit5 = sum(!is.na(Visit5_mean))) %>%
   
   
   # Compress NAs
   group_by(species) %>%
   summarise_all(funs(mean(., na.rm = T))) %>%
   
-  # Must have at least 10 observations in each subcategory
-  filter(n_visit1 >= 10) %>%
-  filter(n_visit4 >= 10) %>%
-  filter(n_visit5 >= 10) %>%
+  # Must have at least # observations for each species
+  # i.e. species must be present in at lest 10 patients for each time point
+  filter(n_visit1 >= patients_per_species) %>%
+  filter(n_visit4 >= patients_per_species) %>%
+  filter(n_visit5 >= patients_per_species) %>%
   
   # Calculate SEM for each mean
   mutate(SEM_visit1 = sd_visit1 / sqrt(n_visit1)) %>%
@@ -183,8 +200,9 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
        x = "Species",
        y = "Response Ratio",
        color = "Visit Comparisons",
-       caption = "Only considering samples from patients that provided samples at all 3 time points\n
-                  Must have 10 probes detected to consider species present") +
+       caption = paste0("Only considering samples from patients that provided samples at all 3 time points\n
+                  Must have ", as.character(probes_per_species), " probes detected to consider species present\n
+                  Species must be present in at least ", as.character(patients_per_species), " patients per time point")) +
   theme_minimal() +
   coord_flip() +
   theme(
@@ -197,4 +215,5 @@ Humichip_RR_plot <- ggplot(data = Humichip_RR_tidy) +
     plot.caption = element_text(hjust = 0.5)
   )
 
+Humichip_RR_plot
 ggsave("results/figures/Humichip_RespRatio_Visit_species.png", height = 9, width = 12)

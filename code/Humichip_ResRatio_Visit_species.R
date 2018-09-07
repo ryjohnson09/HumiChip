@@ -67,7 +67,7 @@ rm(matched_glomics, matched_samples)
 
 
 # Set thresholds
-probes_per_species <- 7
+probes_per_species <- 9
 patients_per_species <- 10
 
 

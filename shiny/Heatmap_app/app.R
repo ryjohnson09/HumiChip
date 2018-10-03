@@ -37,6 +37,15 @@ both_choices <- c("All", colnames(treat)[grep(pattern = "_both$", colnames(treat
 
 either_choices <- c("All", colnames(treat)[grep(pattern = "_either$", colnames(treat))])
 
+facet_choices <- list(
+  "Visit" = "visit_number",
+  "Treatment" = "Treatment",
+  "Impact on Activity" = "Impact_of_illness_on_activity_level",
+  "Past 8 hours diarrhea severity" = "LLS_severity",
+  "Alternative Categories" = "Alternative_Categories",
+  "ESBL Visit 1" = "ESBL_V1",
+  "ESBL Visit 5" = "ESBL_V5")
+
 
 
 ## UI ------------------------------------------------------------------------------------
@@ -71,7 +80,17 @@ ui <- fluidPage(
                  helpText("How are samples determined to be positive for pathogen"),
                  # Pathogen Choices
                  uiOutput("secondSelection"),
-                 helpText("If", code("All"), ", then all samples included."))),
+                 helpText("If", code("All"), ", then all samples included.")))),
+      fluidRow(
+        h3("Facet Option"),
+        
+        column(12, 
+               wellPanel(
+                 # Ordination Type
+                 radioButtons("facet", label = h3("Facet by:"),
+                              choices = facet_choices, selected = "visit_number"))),
+        
+        
       
       downloadButton('downloadPlot','Download Plot')),
     
@@ -84,7 +103,7 @@ ui <- fluidPage(
     plotOutput("plot", width = "1000px", height = "800px"),
     
     # Table to see patients (not needed, but useful for troubleshooting)
-    #fluidRow(column(12,tableOutput('table'))),
+    fluidRow(column(12,tableOutput('table'))),
     
     ################################
     ### Notes Regarding Analysis ###
@@ -314,7 +333,8 @@ server <- function(input, output){
     
     heatmap_filter_patients <- species_percent_probe() %>%
       select(species, lineage, study_id, visit_number, avg_signal, Treatment,
-           Diarrhea_classification, LLS_severity) %>%
+           Diarrhea_classification, LLS_severity, ESBL_V1, ESBL_V5, 
+           Impact_of_illness_on_activity_level) %>%
       group_by(species) %>%
       filter(n() > 3) %>% # how many samples must have species to be considered present
       mutate(Phylum = gsub(x = lineage, pattern = ".*;phylum:(\\w*\\s*\\w*);.*", replacement = "\\1")) # add phylum column
@@ -350,17 +370,21 @@ server <- function(input, output){
   })
   
   
+  
   #####################
   ### Final Heatmap ###
   #####################
   
   plotInput <- reactive({
     
+    # Set variables
+    
+    
     ggplot(heatmap_data(), aes(x = study_id, y = species)) +
       geom_tile(aes(fill = avg_signal)) +
       scale_y_discrete(expand=c(0,0)) +
       scale_x_discrete(expand=c(0,0)) +
-      facet_grid(~visit_number, scales = "free") +
+      facet_grid(as.formula(paste("~", input$facet)), scales = "free") +
       scale_fill_viridis_c(name = "Normalized\nSignal\nIntensity", na.value = "black") +
       labs(caption = "Purple = Proteobacteria\nBlue = Bacteroidetes\nRed = Actinobacteria\nGreen = Firmicutes") +
       theme(
@@ -381,6 +405,8 @@ server <- function(input, output){
   output$plot <- renderPlot({
     print(plotInput())
   })
+  
+  #output$table <- renderTable({heatmap_data()})
   
   
   #####################

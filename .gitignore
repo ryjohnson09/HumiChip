@@ -15,6 +15,11 @@ exploratory/
 results/
 docs/
 
-# R Related#
+# R Related #
 ############
 .Rproj.user/
+
+# Shiny #
+###############
+shiny/*/*
+!shiny/*/app.R

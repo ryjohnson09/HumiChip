@@ -9,6 +9,7 @@
 ├── README.md		# This README
 ├── code		    # Source code (R, Python, Bash, etc)
 ├── makefile		# Source code (R, Python, Bash, etc)
+├── shiny			# Shiny app development
 ├── data
 │   ├── processed	# Data that has been cleaned and is ready to be analyzed
 │   └── raw		    # Raw unmanipulated data. *DO NOT MODIFY*

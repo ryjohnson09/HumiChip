@@ -130,7 +130,7 @@ ui <- fluidPage(
   
   # Plot
   mainPanel(
-    plotOutput("plot", width = "1000px", height = "800px"),
+    plotOutput("plot", width = "1000px", height = "900px"),
     
     # Table to see patients (not needed, but useful for troubleshooting)
     fluidRow(column(12,tableOutput('table'))),
@@ -433,7 +433,7 @@ server <- function(input, output){
         plot.background = element_blank(), 
         panel.background = element_rect(fill = "black"),
         panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 90, size = 7, vjust = 0.5),
+        axis.text.x = element_text(angle = 90, size = 8, vjust = 0.5),
         axis.text.y = element_text(color = heatmap_phylum_colors(), size = 12),
         plot.caption = element_text(hjust = 0),
         strip.text.x = element_text(size = 12)

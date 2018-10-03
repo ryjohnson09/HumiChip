@@ -82,13 +82,28 @@ ui <- fluidPage(
                  uiOutput("secondSelection"),
                  helpText("If", code("All"), ", then all samples included.")))),
       fluidRow(
-        h3("Facet Option"),
+        h3("Visualization Parameters"),
         
         column(12, 
                wellPanel(
                  # Ordination Type
                  radioButtons("facet", label = h3("Facet by:"),
-                              choices = facet_choices, selected = "visit_number"))),
+                              choices = facet_choices, selected = "visit_number"),
+                 
+                 # Probe per species
+                 sliderInput("probe_number", "Minimum Probe # per species:",
+                             min = 0, max = 17,
+                             value = 10),
+                 
+                 # Probe Threshold
+                 sliderInput("probe_threshold", "% probes needed to be consider species present:",
+                             min = 0, max = 100,
+                             value = 60),
+                 
+                 # Species in samples
+                 sliderInput("species_threshold", "# samples positive to include species in heatmap:",
+                             min = 0, max = 10,
+                             value = 3))),
         
         
       
@@ -320,8 +335,8 @@ server <- function(input, output){
     select(species, lineage, glomics_ID, 
            study_id, visit_number, 
            detected_probes, total_probes, percent_probe, avg_signal, everything()) %>%
-    filter(total_probes >= 10) %>% # How many probes each species must have
-    filter(percent_probe >= 60) # what percent of probes must be present to consider positive
+    filter(total_probes >= input$probe_number) %>% # How many probes each species must have
+    filter(percent_probe >= input$probe_threshold) # what percent of probes must be present to consider positive
   })
   
   
@@ -336,7 +351,7 @@ server <- function(input, output){
            Diarrhea_classification, LLS_severity, ESBL_V1, ESBL_V5, 
            Impact_of_illness_on_activity_level) %>%
       group_by(species) %>%
-      filter(n() > 3) %>% # how many samples must have species to be considered present
+      filter(n() > input$species_threshold) %>% # how many samples must have species to be considered present
       mutate(Phylum = gsub(x = lineage, pattern = ".*;phylum:(\\w*\\s*\\w*);.*", replacement = "\\1")) # add phylum column
     
     # Align species by most to least abundant
@@ -392,7 +407,7 @@ server <- function(input, output){
         panel.background = element_rect(fill = "black"),
         panel.grid = element_blank(),
         axis.text.x = element_text(angle = 90, size = 7, vjust = 0.5),
-        axis.text.y = element_text(color = heatmap_phylum_colors()),
+        axis.text.y = element_text(color = heatmap_phylum_colors(), size = 12),
         plot.caption = element_text(hjust = 0),
         strip.text.x = element_text(size = 12)
       )
@@ -416,7 +431,7 @@ server <- function(input, output){
   output$downloadPlot <- downloadHandler(
     filename = function(){paste("shiny_plot",'.png',sep='')},
     content = function(file){
-      ggsave(file, plot=plotInput())
+      ggsave(file, plot=plotInput(), width = 17)
     })
   
 }

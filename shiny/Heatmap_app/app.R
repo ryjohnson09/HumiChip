@@ -46,6 +46,16 @@ facet_choices <- list(
   "ESBL Visit 1" = "ESBL_V1",
   "ESBL Visit 5" = "ESBL_V5")
 
+facet_choices1 <- c("Fever_present_at_presentation", "Vomiting_present", 
+                    "Abdominal_cramps_present_at_presentation", 
+                    "Excesssive_gas_flatulence_present_at_presentation", 
+                    "Nausea_present_at_presentation", 
+                    "Ineffective_and_or_paiful_straining_to_pass_a_stool_at_presentation", 
+                    "Tenesmus_present_at_presentation", "Malaise_present_at_presentation", 
+                    "Fecal_incontinence_present_at_presentation", 
+                    "Constipation_present_at_presentation", "Gross_blood_in_stool", 
+                    "Occult_blood_result")
+
 
 
 ## UI ------------------------------------------------------------------------------------
@@ -78,9 +88,14 @@ ui <- fluidPage(
                  # Pathogen Detection
                  selectInput("path_detection", "Pathogen Detection Method", choices = detection_choices, selected = "Both"),
                  helpText("How are samples determined to be positive for pathogen"),
+                 
                  # Pathogen Choices
                  uiOutput("secondSelection"),
-                 helpText("If", code("All"), ", then all samples included.")))),
+                 helpText("If", code("All"), ", then all samples included."),
+                 
+                 # Facet Choices (alternative)
+                 uiOutput("alt_cats")))),
+      
       fluidRow(
         h3("Visualization Parameters"),
         
@@ -290,6 +305,16 @@ server <- function(input, output){
     }
   })
   
+  ###################################
+  ### Set up alt color categories ###
+  ###################################
+  
+  output$alt_cats <- renderUI({
+    if(input$facet == "Alternative_Categories"){
+      selectInput("facet_alt", "Alternative Categories:", choices = facet_choices1, width = "500px")
+    }
+  })
+  
   
   #######################################
   ### Convert humichip to tidy format ###
@@ -347,9 +372,6 @@ server <- function(input, output){
   heatmap_data <- reactive({
     
     heatmap_filter_patients <- species_percent_probe() %>%
-      select(species, lineage, study_id, visit_number, avg_signal, Treatment,
-           Diarrhea_classification, LLS_severity, ESBL_V1, ESBL_V5, 
-           Impact_of_illness_on_activity_level) %>%
       group_by(species) %>%
       filter(n() > input$species_threshold) %>% # how many samples must have species to be considered present
       mutate(Phylum = gsub(x = lineage, pattern = ".*;phylum:(\\w*\\s*\\w*);.*", replacement = "\\1")) # add phylum column
@@ -392,16 +414,21 @@ server <- function(input, output){
   
   plotInput <- reactive({
     
-    # Set variables
+    # Get facet input
+    if(input$facet != "Alternative_Categories"){
+      my_facet <- ifelse(input$facet == "None", "NULL", input$facet)
+    } else {
+      my_facet <- input$facet_alt
+    }
     
     
     ggplot(heatmap_data(), aes(x = study_id, y = species)) +
       geom_tile(aes(fill = avg_signal)) +
       scale_y_discrete(expand=c(0,0)) +
       scale_x_discrete(expand=c(0,0)) +
-      facet_grid(as.formula(paste("~", input$facet)), scales = "free") +
+      facet_grid(as.formula(paste("~", my_facet)), scales = "free") +
       scale_fill_viridis_c(name = "Normalized\nSignal\nIntensity", na.value = "black") +
-      labs(caption = "Purple = Proteobacteria\nBlue = Bacteroidetes\nRed = Actinobacteria\nGreen = Firmicutes") +
+      labs(caption = "Purple = Proteobacteria\nBlue = Bacteroidetes\nRed = Actinobacteria\nGreen = Firmicutes\nBlack = Other") +
       theme(
         plot.background = element_blank(), 
         panel.background = element_rect(fill = "black"),

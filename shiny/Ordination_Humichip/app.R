@@ -1,4 +1,4 @@
-# Ordination
+# Humichip TrEAT App
 
 library(shiny)
 library(tidyverse)
@@ -35,6 +35,16 @@ visit_choices <- list("Visit 1" = 1,
                       "Visit 5" = 5)
 
 tx_choices <- c("RIF", "LEV", "AZI", "All")
+
+phylum_choices <- humichip %>%
+  filter(str_detect(lineage, "Bacteria")) %>%
+  filter(str_detect(lineage, ";phylum")) %>%
+  mutate(Phylum = gsub(x = lineage, # Phylum column
+                       pattern = ".*;phylum:(\\w*\\s*[-]*\\w*);.*", 
+                       replacement = "\\1")) %>%
+  select(Phylum) %>%
+  distinct() %>%
+  pull(Phylum)
 
 detection_choices <- c("Culture", "Taq", "Both", "Either")
 
@@ -130,7 +140,16 @@ ui <- fluidPage(
              # Probe Functional Category
              selectInput("geneCategory", "Probe Functional Category", choices = geneCategory_choices, selected = "All"),
              helpText("If ", code("Probe Type "), "= ", strong("Functional"), 
-                      ", can select by functional group")))),
+                      ", can select by functional group"),
+             
+             # Select Phylum probes?
+             h5("Phylum Specific Probes"),
+             checkboxInput("select_phylum", label = "Select Phylum Probes?", value = FALSE),
+             helpText("If selected, only probes from selected bacterial phlya will be included in analysis"),
+             
+             # Phyla output
+             uiOutput("phyla"),
+             helpText("Select probes based on bacterial phyla")))),
   
   
   fluidRow(
@@ -279,6 +298,42 @@ server <- function(input, output){
     }
   })
   
+  
+  ########################
+  ### Filter by Phylum ###
+  ########################
+  
+  humichip_phylum <- reactive({
+    
+    if(input$select_phylum){
+      humichip_probe() %>%
+        filter(!is.na(lineage)) %>%
+        filter(str_detect(lineage, "Bacteria")) %>%
+        filter(str_detect(lineage, ";phylum")) %>%
+        mutate(Phylum = gsub(x = lineage, # Phylum column
+                             pattern = ".*;phylum:(\\w*\\s*\\w*);.*", 
+                             replacement = "\\1")) %>%
+        filter(Phylum %in% input$phylum)
+      
+    } else if (!input$select_phylum) {
+      humichip_probe()
+    } else {
+      stopApp()
+    }
+  })
+  
+  #########################################
+  ### Render list of Phyla if applicable ##
+  #########################################
+  output$phyla <- renderUI({
+    
+    if(input$select_phylum){
+      checkboxGroupInput("phylum", "Select Phyla:",
+                         choices = phylum_choices, inline = TRUE)
+    }
+  })
+  
+  
   #######################
   ### Treatment Group ###
   #######################
@@ -360,7 +415,7 @@ server <- function(input, output){
   
   # Filer Humichip to only include specified Visit_Number samples
    humichip_filtered <- reactive({
-     humichip1 <- humichip_probe()[,which(colnames(humichip_probe()) %in% treat_pathogen_filtered()$glomics_ID)]
+     humichip1 <- humichip_phylum()[,which(colnames(humichip_phylum()) %in% treat_pathogen_filtered()$glomics_ID)]
      
      # Set NA's to 0 and values not NA to original value
      humichip1 <- humichip1 %>%

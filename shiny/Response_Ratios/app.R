@@ -22,8 +22,7 @@ matched_choices <- list("All Samples" = "all_samples",
 tx_choices <- c("RIF", "LEV", "AZI", "All")
 
 visit_choices <- c("Visit 1 vs 4",
-                   "Visit 1 vs 5",
-                   "Acute vs Conv")
+                   "Visit 1 vs 5")
 
 phylum_choices <- humichip %>%
   filter(str_detect(lineage, "Bacteria")) %>%
@@ -101,7 +100,12 @@ ui <- fluidPage(
              wellPanel(
                # gene category vs subcateogry1 vs subcategory2
                selectInput("cat_choice", "Y-axis Categories", choices = cat_choices, selected = "geneCategory"),
-               helpText("Select Categories to Compare")))),
+               helpText("Select Categories to Compare"),
+               
+               # Number of minimum samples that must have Category
+               sliderInput("cat_min_number", "Minimum Observation in Category:",
+                           min = 1, max = 20,
+                           value = 10)))),
     
     
     fluidRow(
@@ -120,7 +124,7 @@ ui <- fluidPage(
   
   # Plot
   mainPanel(
-    #plotOutput("plot", width = "800px", height = "800px"),
+    plotOutput("plot", width = "800px", height = "800px"),
     
     # Table to see patients (not needed, but useful for troubleshooting)
     fluidRow(column(12,tableOutput('table')))
@@ -230,7 +234,8 @@ server <- function(input, output){
     # If cat_choice == Functional group
     } else if (input$cat_choice != "Phylum"){
       humichip_select() %>%
-        filter(gene != "STR_SPE")
+        filter(gene != "STR_SPE") %>%
+        mutate(Phylum = NA)
     } else {
       stopApp("Problem filtering STR_SPE vs Functional Probes")
     }
@@ -286,8 +291,6 @@ server <- function(input, output){
       filter(treat_tx(), visit_number %in% c(1,4))
     } else if (input$Visit_Number == "Visit 1 vs 5"){
       filter(treat_tx(), visit_number %in% c(1,5))
-    } else if (input$Visit_Number == "Acute vs Conv"){
-      filter(treat_tx(), visit_number %in% c(1,4,5))
     } else {
       stopApp("Problem Filtering by Visit")
     }
@@ -316,17 +319,168 @@ server <- function(input, output){
   
   ############################################
   ### Filter Humichip for certain patients ###
+  ### And Make Long ##########################
   ############################################
   
   
   humichip_final <- reactive({
-    
-    humichip_probe()
+    # Subset Samples based on treat_pathogen_filtered
+    humichip_probe() %>%
+      select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
+                                   "annotation", "geneCategory", "subcategory1",
+                                   "subcategory2", "Phylum",
+                                   treat_pathogen_filtered()$glomics_ID)) %>%
+      # Make Long
+      gather(key = glomics_ID,
+             value = Signal,
+             -Genbank.ID, -gene,
+             -species, -lineage, -annotation, -geneCategory, -subcategory1,
+             -subcategory2, -Phylum) %>%
       
-  
+      # Merge in ID_Decoder
+      left_join(., ID_decoder, by = c("glomics_ID")) %>%
+      select(glomics_ID, study_id, visit_number, everything())
   })
   
-  output$table <- renderTable({head(treat_visit_filtered(), 25)})
+  
+  
+  
+  
+  
+  ################################
+  ### Calculate Response Ratio ###
+  ################################
+  
+
+  
+  humichip_RR <- reactive({
+    
+    y_axis_cat <- sym(input$cat_choice)
+    
+    humichip_final() %>%
+    
+      group_by(glomics_ID) %>%
+      mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
+      
+      # Remove columns not needed
+      select(glomics_ID, visit_number, !!y_axis_cat, Signal_Relative_Abundance) %>%
+    
+      
+      # Remove any rows with NA in the signal category or y_axis_cat
+      filter(!is.na(Signal_Relative_Abundance)) %>%
+      filter(!is.na(!!y_axis_cat)) %>%
+       
+       
+      # Calculate mead, sd, and counts (n)
+      group_by(!!y_axis_cat, glomics_ID, visit_number) %>%
+      summarise(cat_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
+      group_by(!!y_axis_cat, visit_number) %>%
+      summarise(mean_signal = mean(cat_relative_abundance),
+                sd_signal = sd(cat_relative_abundance),
+                n = sum(!is.na(cat_relative_abundance))) %>%
+       
+       
+      # Spread the signal mean by visit number
+      group_by(!!y_axis_cat) %>%
+      spread(visit_number, mean_signal) %>%
+      
+      # Rename mean columns
+      rename(group1_mean = colnames(.)[length(colnames(.)) - 1],
+             group2_mean = colnames(.)[length(colnames(.))]) %>%
+      
+      # Spread the sd and n columns by visit
+      mutate(sd_group1 = ifelse(!is.na(group1_mean), sd_signal, NA)) %>%
+      mutate(sd_group2 = ifelse(!is.na(group2_mean), sd_signal, NA)) %>%
+      mutate(n_group1 = ifelse(!is.na(group1_mean), n, NA)) %>%
+      mutate(n_group2 = ifelse(!is.na(group2_mean), n, NA)) %>%
+      select(-sd_signal, -n) %>%
+       
+      
+      # Compress NAs
+      group_by(!!y_axis_cat) %>%
+      summarise_all(funs(sum(., na.rm = T))) %>%
+      
+      # Must have at least 10 observations in each subcategory
+      filter(n_group1 >= input$cat_min_number) %>%
+      filter(n_group2 >= input$cat_min_number) %>%
+       
+      # Calculate SEM for each mean
+      mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
+      mutate(SEM_group2 = sd_group2 / sqrt(n_group2)) %>%
+      
+      # Calculate the Response Ratio (RR)
+      mutate(RR = log(group2_mean / group1_mean)) %>%
+      
+      # Calculate the Standard error for the RR
+      mutate(SE_RR = sqrt((SEM_group1**2 / group1_mean**2) + (SEM_group2**2 / group2_mean**2))) %>%
+      
+      # Calcualte the 95% confidence interval for each RR
+      mutate(CI95 = abs(1.96 * SE_RR))
+  })
+  
+      
+    
+    
+  ##############################
+  #### Create plots/tables #####
+  ##############################
+  
+  plotInput <- reactive({
+    
+    y_axis_cat <- sym(input$cat_choice)
+    
+    ggplot(data = humichip_RR()) +
+      geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+      
+      # points and error bar
+      geom_point(aes(x = !!y_axis_cat, y = RR), size = 4) +
+      geom_errorbar(aes(ymin = RR - CI95, 
+                        ymax = RR + CI95, 
+                        x = !!y_axis_cat)) +
+      
+      labs(title = "Response Ratio",
+           x = "Category",
+           y = "Response Ratio") +
+      
+      theme_minimal() +
+      coord_flip() +
+      theme(
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0.5)
+      )
+    
+  })
+  
+  
+  
+  ####################
+  ### Display Plot ###
+  ####################
+  output$plot <- renderPlot({
+    print(plotInput())
+  })
+  
+  #####################
+  ### Download plot ###
+  #####################
+  
+  output$downloadPlot <- downloadHandler(
+    filename = function(){paste("shiny_plot",'.png',sep='')},
+    content = function(file){
+      ggsave(file, plot=plotInput())
+    })
+
+  
+  
+  
+  
+  
+  output$table <- renderTable({head(humichip_RR(), 25)})
   
 }
 

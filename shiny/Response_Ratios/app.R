@@ -21,7 +21,9 @@ matched_choices <- list("All Samples" = "all_samples",
 
 tx_choices <- c("RIF", "LEV", "AZI", "All")
 
-visit_choices <- list()
+visit_choices <- c("Visit 1 vs 4",
+                   "Visit 1 vs 5",
+                   "Acute vs Conv")
 
 phylum_choices <- humichip %>%
   filter(str_detect(lineage, "Bacteria")) %>%
@@ -33,7 +35,10 @@ phylum_choices <- humichip %>%
   distinct() %>%
   pull(Phylum)
 
-gene_cat_choices <- c()
+cat_choices <- list("Gene Category" = "geneCategory",
+                    "Subcategory 1" = "subcategory1",
+                    "Subcategory 2" = "subcategory2",
+                    "Phylum" = "Phylum")
 
 detection_choices <- c("Culture", "Taq", "Both", "Either")
 
@@ -75,8 +80,8 @@ ui <- fluidPage(
                helpText("Select patients samples in specified treatment groups"),
                
                # Visit
-               checkboxGroupInput('Visit_Number', 'Visit:', choices = visit_choices, selected = c(1, 4, 5), inline = TRUE),
-               helpText("Select patient samples from specified visit number"),
+               radioButtons('Visit_Number', 'Visit:', choices = visit_choices, selected = "Visit 1 vs 5", inline = TRUE),
+               helpText("Select patient groups to compare by visit"),
                
                # Pathogen Detection
                selectInput("path_detection", "Pathogen Detection Method", choices = detection_choices, selected = "Both"),
@@ -95,9 +100,8 @@ ui <- fluidPage(
       column(12, 
              wellPanel(
                # gene category vs subcateogry1 vs subcategory2
-               selectInput("gene_cat", "Gene Categories", choices = gene_cat_choices, selected = "All"),
-               helpText("Select patients samples in specified treatment groups"),
-               ))),
+               selectInput("cat_choice", "Y-axis Categories", choices = cat_choices, selected = "geneCategory"),
+               helpText("Select Categories to Compare")))),
     
     
     fluidRow(
@@ -105,7 +109,7 @@ ui <- fluidPage(
       
       column(12, 
              wellPanel(
-               ))),
+               )),
     
       
       downloadButton('downloadPlot','Download Plot')),
@@ -116,15 +120,15 @@ ui <- fluidPage(
   
   # Plot
   mainPanel(
-    plotOutput("plot", width = "800px", height = "800px"),
+    #plotOutput("plot", width = "800px", height = "800px"),
     
     # Table to see patients (not needed, but useful for troubleshooting)
-    #fluidRow(column(12,tableOutput('table'))),
+    fluidRow(column(12,tableOutput('table')))
     
     ################################
     ### Notes Regarding Analysis ###
     ################################
-    helpText("")
+    #helpText("")
   )))
 
 
@@ -163,12 +167,30 @@ server <- function(input, output){
   ##############################################
   
   humichip_select <- reactive({
+    
     if(input$matched == "matched_samples"){
       # Get vector of patients that have matched visits
-      matched_samples <- ID_decoder %>%
-        filter(visit_number %in% as.numeric(input$Visit_Number)) %>%
+      matched_samples <- 
+        
+        #Visit 1 and 4
+        if (input$Visit_Number == "Visit 1 vs 4"){
+          filter(ID_decoder, visit_number %in% c(1,4))
+          
+        # Visit 1 and 5
+        } else if (input$Visit_Number == "Visit 1 vs 5"){
+          filter(ID_decoder, visit_number %in% c(1,5))
+          
+        # Acute vs Conv
+        } else if (input$Visit_Number == "Acute vs Conv"){
+          filter(ID_decoder, visit_number %in% c(1,4,5))
+            
+        } else {
+          stopApp("Error with matched samples")
+        }
+    
+      matched_samples <- matched_samples %>% 
         count(study_id) %>%
-        filter(n == length(as.numeric(input$Visit_Number))) %>%
+        filter(n == length(unique(matched_samples$visit_number))) %>%
         pull(study_id)
       
       # Get glomics ID's that correspond to the patients
@@ -182,13 +204,38 @@ server <- function(input, output){
         select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                      "annotation", "geneCategory", "subcategory1",
                                      "subcategory2", matched_glomics))
-      
-      #rm(matched_glomics, matched_samples)
-      
     } else {
       humichip
     }
   })
+  
+  
+  ###############################################
+  ### Select for Functional or STR_SPE probes ###
+  ###############################################
+  
+  humichip_probe <- reactive({
+    
+    # If cat_choice == Phylum, filter for STR_SPE
+    # and add Phylum category
+    if(input$cat_choice == "Phylum"){
+      humichip_select() %>%
+        filter(gene == "STR_SPE") %>%
+        filter(str_detect(lineage, "Bacteria")) %>%
+        filter(str_detect(lineage, ";phylum")) %>%
+        mutate(Phylum = gsub(x = lineage, # Phylum column
+                             pattern = ".*;phylum:(\\w*\\s*[-]*\\w*);.*", 
+                             replacement = "\\1"))
+      
+    # If cat_choice == Functional group
+    } else if (input$cat_choice != "Phylum"){
+      humichip_select() %>%
+        filter(gene != "STR_SPE")
+    } else {
+      stopApp("Problem filtering STR_SPE vs Functional Probes")
+    }
+  })
+  
   
   
   
@@ -208,6 +255,78 @@ server <- function(input, output){
   })
   
   
+  #######################
+  ### Treatment Group ###
+  #######################
+  
+  # Filter for treatment Group
+  treat_tx <- reactive({
+    if(input$tx_group == "AZI"){
+      filter(treat, Treatment == "AZI")
+      
+    } else if (input$tx_group == "RIF"){
+      filter(treat, Treatment == "RIF")
+      
+    } else if (input$tx_group == "LEV"){
+      filter(treat, Treatment == "LEV")
+      
+    } else {
+      return(treat)
+    }
+  })
+  
+  
+  #################
+  ##### Visit #####
+  #################
+  
+  # Filter ID_decoder based on Visit Number
+  treat_visit_filtered <- reactive({
+    if(input$Visit_Number == "Visit 1 vs 4"){
+      filter(treat_tx(), visit_number %in% c(1,4))
+    } else if (input$Visit_Number == "Visit 1 vs 5"){
+      filter(treat_tx(), visit_number %in% c(1,5))
+    } else if (input$Visit_Number == "Acute vs Conv"){
+      filter(treat_tx(), visit_number %in% c(1,4,5))
+    } else {
+      stopApp("Problem Filtering by Visit")
+    }
+  })
+  
+
+  #####################################
+  #### TrEAT DB filter by pathogen ####
+  #####################################
+  
+  # Filter for pathogen of interest
+  treat_pathogen_filtered <- reactive({
+    
+    # Include all patients
+    if (input$pathogens == "All"){
+      treat_visit_filtered()
+    } else {
+      
+      # Select for patients with specified pathogen
+      pathogen <- sym(input$pathogens)
+      treat_visit_filtered() %>%
+        filter(!!pathogen == "yes")
+    }
+  })
+  
+  
+  ############################################
+  ### Filter Humichip for certain patients ###
+  ############################################
+  
+  
+  humichip_final <- reactive({
+    
+    humichip_probe()
+      
+  
+  })
+  
+  output$table <- renderTable({head(treat_visit_filtered(), 25)})
   
 }
 

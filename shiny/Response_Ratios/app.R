@@ -113,6 +113,8 @@ ui <- fluidPage(
       
       column(12, 
              wellPanel(
+               # Only keep significant RR's
+               checkboxInput("keeper", label = "Remove non-significant RR's", value = FALSE)
                )),
     
       
@@ -415,9 +417,32 @@ server <- function(input, output){
       mutate(SE_RR = sqrt((SEM_group1**2 / group1_mean**2) + (SEM_group2**2 / group2_mean**2))) %>%
       
       # Calcualte the 95% confidence interval for each RR
-      mutate(CI95 = abs(1.96 * SE_RR))
+      mutate(CI95 = abs(1.96 * SE_RR)) %>%
+      
+      # Add in keeper column if does not overlap 0
+      mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
+      
+      # Make labels pretty
+      mutate(pretty_cat = str_to_title(!!y_axis_cat)) %>%
+      mutate(pretty_cat = str_replace_all(pretty_cat, "_"," "))
   })
   
+  
+  ##########################################
+  ### Filter for RR that don't overlap 0 ###
+  ##########################################
+  
+  humichip_significant <- reactive({
+    
+    if (input$keeper){
+      humichip_RR() %>%
+        filter(keeper == "Yes")
+    } else if (!input$keeper){
+      humichip_RR()
+    } else {
+      stopApp("Failure at 'keeper' column creation")
+    }
+  })
       
     
     
@@ -429,14 +454,15 @@ server <- function(input, output){
     
     y_axis_cat <- sym(input$cat_choice)
     
-    ggplot(data = humichip_RR()) +
+    ggplot(data = humichip_significant()) +
       geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
       
       # points and error bar
-      geom_point(aes(x = !!y_axis_cat, y = RR), size = 4) +
+      geom_point(aes(x = pretty_cat, y = RR), size = 4) +
       geom_errorbar(aes(ymin = RR - CI95, 
                         ymax = RR + CI95, 
-                        x = !!y_axis_cat)) +
+                        x = pretty_cat),
+                    width = 0.25) +
       
       labs(title = "Response Ratio",
            x = "Category",
@@ -480,7 +506,7 @@ server <- function(input, output){
   
   
   
-  output$table <- renderTable({head(humichip_RR(), 25)})
+  output$table <- renderTable({head(humichip_significant(), 25)})
   
 }
 

@@ -350,14 +350,46 @@ server <- function(input, output){
              -species, -lineage, -annotation, -geneCategory, -subcategory1,
              -subcategory2, -Phylum) %>%
       
-      # Merge in treat
+      # Merge in ID decoder
       left_join(., ID_decoder, by = c("glomics_ID")) %>%
       select(glomics_ID, study_id, visit_number, everything())
       
   })
   
-  
-  
+  #################################
+  ### Calculate Rel Abundance #####
+  ### Merge Humichip with TrEAT ###
+  #################################
+  humichip_treat <- reactive({
+    
+    y_axis_cat <- sym(input$cat_choice)
+    grouping_cat <- sym(input$compare_groups)
+    
+    humichip_final() %>%
+      
+      group_by(glomics_ID) %>%
+      mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
+      
+      # Remove columns not needed
+      select(glomics_ID, visit_number, !!y_axis_cat, Signal_Relative_Abundance) %>%
+      
+      
+      # Remove any rows with NA in the signal category or y_axis_cat
+      filter(!is.na(Signal_Relative_Abundance)) %>%
+      filter(!is.na(!!y_axis_cat)) %>%
+      
+      
+      # Calculate mead, sd, and counts (n)
+      ungroup() %>%
+      group_by(!!y_axis_cat, glomics_ID, visit_number) %>%
+      summarise(cat_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
+      
+      # Add in TrEAT metadata
+      left_join(., treat_pathogen_filtered(), by = c("glomics_ID", "visit_number")) %>%
+      select(!!y_axis_cat, glomics_ID, visit_number, cat_relative_abundance, !!grouping_cat) %>%
+      filter(!is.na(!!grouping_cat)) %>%
+      ungroup()
+  })
   
   
   
@@ -372,28 +404,7 @@ server <- function(input, output){
     y_axis_cat <- sym(input$cat_choice)
     grouping_cat <- sym(input$compare_groups)
     
-    humichip_final() %>%
-    
-      group_by(glomics_ID) %>%
-      mutate(Signal_Relative_Abundance = (Signal / sum(Signal, na.rm = TRUE)* 100)) %>%
-      
-      # Remove columns not needed
-      select(glomics_ID, visit_number, !!y_axis_cat, Signal_Relative_Abundance) %>%
-
-
-      # Remove any rows with NA in the signal category or y_axis_cat
-      filter(!is.na(Signal_Relative_Abundance)) %>%
-      filter(!is.na(!!y_axis_cat)) %>%
-
-
-      # Calculate mead, sd, and counts (n)
-      group_by(!!y_axis_cat, glomics_ID, visit_number) %>%
-      summarise(cat_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
-      
-      # Add in TrEAT metadata
-      left_join(., treat_pathogen_filtered(), by = c("glomics_ID", "visit_number")) %>%
-      select(!!y_axis_cat, glomics_ID, visit_number, cat_relative_abundance, !!grouping_cat) %>%
-      filter(!is.na(!!grouping_cat)) %>%
+     humichip_treat() %>%
       
       # Calculate mean, sd, and n
       group_by(!!y_axis_cat, !!grouping_cat) %>%
@@ -403,6 +414,7 @@ server <- function(input, output){
         
         
       # Spread the signal mean by visit number
+      ungroup() %>%
       group_by(!!y_axis_cat) %>%
       spread(!!grouping_cat, mean_signal) %>%
        
@@ -417,8 +429,8 @@ server <- function(input, output){
       mutate(n_group2 = ifelse(!is.na(group2_mean), n, NA)) %>%
       select(-sd_signal, -n) %>%
 
-
       # Compress NAs
+      ungroup() %>%
       group_by(!!y_axis_cat) %>%
       summarise_all(funs(sum(., na.rm = T))) %>%
 
@@ -447,7 +459,8 @@ server <- function(input, output){
       mutate(pretty_cat = str_replace_all(pretty_cat, "_"," ")) %>%
       
       # Factor columns
-      mutate(pretty_cat = fct_reorder(pretty_cat, RR))
+      mutate(pretty_cat = fct_reorder(pretty_cat, RR)) %>%
+      ungroup()
   })
   
   
@@ -476,8 +489,13 @@ server <- function(input, output){
   plotInput <- reactive({
     
     y_axis_cat <- sym(input$cat_choice)
+    grouping_cat <- sym(input$compare_groups)
     
-    
+    group_labels <- humichip_treat() %>%
+      select(!!grouping_cat) %>%
+      distinct() %>%
+      pull(!!grouping_cat)
+      
     
     ggplot(data = humichip_significant()) +
       geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
@@ -489,7 +507,13 @@ server <- function(input, output){
                         x = pretty_cat),
                     width = 0.25) +
       
-      # labels
+      # Group labels
+      annotate(geom = "text", label = group_labels[1], x = Inf, y = -Inf, hjust = 0, vjust = 1, 
+               size = 5, color = "red", fontface = 2) +
+      annotate(geom = "text", label = group_labels[2], x = Inf, y = Inf, hjust = 1, vjust = 1, 
+               size = 5, color = "red", fontface = 2) +
+      
+      # plot labels
       labs(title = "Response Ratio",
            x = "Category",
            y = "Response Ratio") +

@@ -21,7 +21,11 @@ matched_choices <- list("All Samples" = "all_samples",
 
 tx_choices <- c("RIF", "LEV", "AZI", "All")
 
-visit_choices <- c("Visit 1 vs 4",
+visit_choices <- list("Visit 1" = 1,
+                      "Visit 4" = 4,
+                      "Visit 5" = 5)
+
+compare_choices <- c("Visit 1 vs 4",
                    "Visit 1 vs 5")
 
 phylum_choices <- humichip %>%
@@ -79,7 +83,11 @@ ui <- fluidPage(
                helpText("Select patients samples in specified treatment groups"),
                
                # Visit
-               radioButtons('Visit_Number', 'Visit:', choices = visit_choices, selected = "Visit 1 vs 5", inline = TRUE),
+               checkboxGroupInput('Visit_Number', 'Visit:', choices = visit_choices, selected = c(1, 4, 5), inline = TRUE),
+               helpText("Select patient samples from specified visit number"),
+               
+               # Comparing Groups
+               radioButtons('compare_groups', 'Groups to Compare:', choices = compare_choices, selected = "Visit 1 vs 5", inline = TRUE),
                helpText("Select patient groups to compare by visit"),
                
                # Pathogen Detection
@@ -126,7 +134,7 @@ ui <- fluidPage(
   
   # Plot
   mainPanel(
-    plotOutput("plot", width = "800px", height = "800px"),
+    #plotOutput("plot", width = "800px", height = "800px"),
     
     # Table to see patients (not needed, but useful for troubleshooting)
     fluidRow(column(12,tableOutput('table')))
@@ -179,15 +187,15 @@ server <- function(input, output){
       matched_samples <- 
         
         #Visit 1 and 4
-        if (input$Visit_Number == "Visit 1 vs 4"){
+        if (input$compare_groups == "Visit 1 vs 4"){
           filter(ID_decoder, visit_number %in% c(1,4))
           
         # Visit 1 and 5
-        } else if (input$Visit_Number == "Visit 1 vs 5"){
+        } else if (input$compare_groups == "Visit 1 vs 5"){
           filter(ID_decoder, visit_number %in% c(1,5))
           
         # Acute vs Conv
-        } else if (input$Visit_Number == "Acute vs Conv"){
+        } else if (input$compare_groups == "Acute vs Conv"){
           filter(ID_decoder, visit_number %in% c(1,4,5))
             
         } else {
@@ -282,17 +290,49 @@ server <- function(input, output){
     }
   })
   
-  
   #################
   ##### Visit #####
   #################
   
-  # Filter ID_decoder based on Visit Number
+  # Filter treat based on Visit Number
   treat_visit_filtered <- reactive({
-    if(input$Visit_Number == "Visit 1 vs 4"){
+    if(all(input$Visit_Number %in% "1")){
+      filter(treat_tx(), visit_number == 1)
+      
+    } else if (all(input$Visit_Number %in% "4")){
+      filter(treat_tx(), visit_number == 4)
+      
+    } else if (all(input$Visit_Number %in% "5")){
+      filter(treat_tx(), visit_number == 5)
+      
+    } else if (all(input$Visit_Number %in% c("4","5"))){
+      filter(treat_tx(), visit_number %in% c(4,5))
+      
+    } else if (all(input$Visit_Number %in% c("1","4"))){
       filter(treat_tx(), visit_number %in% c(1,4))
-    } else if (input$Visit_Number == "Visit 1 vs 5"){
+      
+    } else if (all(input$Visit_Number %in% c("1","5"))){
       filter(treat_tx(), visit_number %in% c(1,5))
+      
+    } else if (is.null(input$Visit_Number)){
+      return(treat_tx())
+      
+    } else {
+      return(treat_tx())
+    }
+  })
+  
+  
+  ############################
+  ##### Comparing Groups #####
+  ############################
+  
+  # Filter ID_decoder based on Visit Number
+  treat_groups_filtered <- reactive({
+    if(input$compare_groups == "Visit 1 vs 4"){
+      filter(treat_visit_filtered(), visit_number %in% c(1,4))
+    } else if (input$compare_groups == "Visit 1 vs 5"){
+      filter(treat_visit_filtered(), visit_number %in% c(1,5))
     } else {
       stopApp("Problem Filtering by Visit")
     }
@@ -308,12 +348,12 @@ server <- function(input, output){
     
     # Include all patients
     if (input$pathogens == "All"){
-      treat_visit_filtered()
+      treat_groups_filtered()
     } else {
       
       # Select for patients with specified pathogen
       pathogen <- sym(input$pathogens)
-      treat_visit_filtered() %>%
+      treat_groups_filtered() %>%
         filter(!!pathogen == "yes")
     }
   })
@@ -339,9 +379,10 @@ server <- function(input, output){
              -species, -lineage, -annotation, -geneCategory, -subcategory1,
              -subcategory2, -Phylum) %>%
       
-      # Merge in ID_Decoder
+      # Merge in treat
       left_join(., ID_decoder, by = c("glomics_ID")) %>%
       select(glomics_ID, study_id, visit_number, everything())
+      
   })
   
   
@@ -366,65 +407,72 @@ server <- function(input, output){
       
       # Remove columns not needed
       select(glomics_ID, visit_number, !!y_axis_cat, Signal_Relative_Abundance) %>%
-    
-      
+
+
       # Remove any rows with NA in the signal category or y_axis_cat
       filter(!is.na(Signal_Relative_Abundance)) %>%
       filter(!is.na(!!y_axis_cat)) %>%
-       
-       
+
+
       # Calculate mead, sd, and counts (n)
       group_by(!!y_axis_cat, glomics_ID, visit_number) %>%
-      summarise(cat_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE)) %>%
-      group_by(!!y_axis_cat, visit_number) %>%
-      summarise(mean_signal = mean(cat_relative_abundance),
-                sd_signal = sd(cat_relative_abundance),
-                n = sum(!is.na(cat_relative_abundance))) %>%
-       
-       
-      # Spread the signal mean by visit number
-      group_by(!!y_axis_cat) %>%
-      spread(visit_number, mean_signal) %>%
+      summarise(cat_relative_abundance = sum(Signal_Relative_Abundance, na.rm = TRUE))
       
-      # Rename mean columns
-      rename(group1_mean = colnames(.)[length(colnames(.)) - 1],
-             group2_mean = colnames(.)[length(colnames(.))]) %>%
       
-      # Spread the sd and n columns by visit
-      mutate(sd_group1 = ifelse(!is.na(group1_mean), sd_signal, NA)) %>%
-      mutate(sd_group2 = ifelse(!is.na(group2_mean), sd_signal, NA)) %>%
-      mutate(n_group1 = ifelse(!is.na(group1_mean), n, NA)) %>%
-      mutate(n_group2 = ifelse(!is.na(group2_mean), n, NA)) %>%
-      select(-sd_signal, -n) %>%
-       
       
-      # Compress NAs
-      group_by(!!y_axis_cat) %>%
-      summarise_all(funs(sum(., na.rm = T))) %>%
-      
-      # Must have at least 10 observations in each subcategory
-      filter(n_group1 >= input$cat_min_number) %>%
-      filter(n_group2 >= input$cat_min_number) %>%
-       
-      # Calculate SEM for each mean
-      mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
-      mutate(SEM_group2 = sd_group2 / sqrt(n_group2)) %>%
-      
-      # Calculate the Response Ratio (RR)
-      mutate(RR = log(group2_mean / group1_mean)) %>%
-      
-      # Calculate the Standard error for the RR
-      mutate(SE_RR = sqrt((SEM_group1**2 / group1_mean**2) + (SEM_group2**2 / group2_mean**2))) %>%
-      
-      # Calcualte the 95% confidence interval for each RR
-      mutate(CI95 = abs(1.96 * SE_RR)) %>%
-      
-      # Add in keeper column if does not overlap 0
-      mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
-      
-      # Make labels pretty
-      mutate(pretty_cat = str_to_title(!!y_axis_cat)) %>%
-      mutate(pretty_cat = str_replace_all(pretty_cat, "_"," "))
+    
+    
+    
+
+      # group_by(!!y_axis_cat, visit_number) %>%
+      # summarise(mean_signal = mean(cat_relative_abundance),
+      #           sd_signal = sd(cat_relative_abundance),
+      #           n = sum(!is.na(cat_relative_abundance))) %>%
+      #  
+      #  
+      # # Spread the signal mean by visit number
+      # group_by(!!y_axis_cat) %>%
+      # spread(visit_number, mean_signal) %>%
+      # 
+      # # Rename mean columns
+      # rename(group1_mean = colnames(.)[length(colnames(.)) - 1],
+      #        group2_mean = colnames(.)[length(colnames(.))]) %>%
+      # 
+      # # Spread the sd and n columns by visit
+      # mutate(sd_group1 = ifelse(!is.na(group1_mean), sd_signal, NA)) %>%
+      # mutate(sd_group2 = ifelse(!is.na(group2_mean), sd_signal, NA)) %>%
+      # mutate(n_group1 = ifelse(!is.na(group1_mean), n, NA)) %>%
+      # mutate(n_group2 = ifelse(!is.na(group2_mean), n, NA)) %>%
+      # select(-sd_signal, -n) %>%
+      #  
+      # 
+      # # Compress NAs
+      # group_by(!!y_axis_cat) %>%
+      # summarise_all(funs(sum(., na.rm = T))) %>%
+      # 
+      # # Must have at least 10 observations in each subcategory
+      # filter(n_group1 >= input$cat_min_number) %>%
+      # filter(n_group2 >= input$cat_min_number) %>%
+      #  
+      # # Calculate SEM for each mean
+      # mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
+      # mutate(SEM_group2 = sd_group2 / sqrt(n_group2)) %>%
+      # 
+      # # Calculate the Response Ratio (RR)
+      # mutate(RR = log(group2_mean / group1_mean)) %>%
+      # 
+      # # Calculate the Standard error for the RR
+      # mutate(SE_RR = sqrt((SEM_group1**2 / group1_mean**2) + (SEM_group2**2 / group2_mean**2))) %>%
+      # 
+      # # Calcualte the 95% confidence interval for each RR
+      # mutate(CI95 = abs(1.96 * SE_RR)) %>%
+      # 
+      # # Add in keeper column if does not overlap 0
+      # mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
+      # 
+      # # Make labels pretty
+      # mutate(pretty_cat = str_to_title(!!y_axis_cat)) %>%
+      # mutate(pretty_cat = str_replace_all(pretty_cat, "_"," "))
   })
   
   
@@ -506,7 +554,7 @@ server <- function(input, output){
   
   
   
-  output$table <- renderTable({head(humichip_significant(), 25)})
+  output$table <- renderTable({head(humichip_RR(), 25)})
   
 }
 

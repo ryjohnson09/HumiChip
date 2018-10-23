@@ -62,7 +62,7 @@ either_choices <- c("All", colnames(treat)[grep(pattern = "_either$", colnames(t
 
 ui <- fluidPage(
   
-  titlePanel("Humichip Ordination"),
+  titlePanel("Humichip Response Ratios"),
   sidebarLayout(
     sidebarPanel(
       
@@ -137,10 +137,10 @@ ui <- fluidPage(
   # Plot
   mainPanel(
     plotOutput("plot", width = "800px", height = "800px"),
-    br(),
+    br()
     
     # Table to see patients (not needed, but useful for troubleshooting)
-    fluidRow(column(12,tableOutput('table')))
+    #fluidRow(column(12,tableOutput('table')))
     
     ################################
     ### Notes Regarding Analysis ###
@@ -556,7 +556,7 @@ server <- function(input, output){
   
   
   
-  output$table <- renderTable({head(humichip_significant(), 25)})
+  #output$table <- renderTable({head(humichip_significant(), 25)})
   
 }
 

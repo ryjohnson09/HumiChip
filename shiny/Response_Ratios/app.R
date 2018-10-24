@@ -117,6 +117,24 @@ ui <- fluidPage(
                            min = 1, max = 20,
                            value = 10)))),
     
+    #######################
+    ### Probe Selection ###
+    #######################
+    fluidRow(
+      h3("Probe Selection"),
+      
+      column(12, 
+             wellPanel(
+               
+               # Select Phylum probes?
+               h5("Phylum Specific Probes"),
+               checkboxInput("select_phylum", label = "Select Phylum Probes?", value = FALSE),
+               helpText("If selected, only probes from selected bacterial phlya will be included in analysis"),
+               
+               # Phyla output
+               uiOutput("phyla"),
+               helpText("Select probes based on bacterial phyla")))),
+    
     
     fluidRow(
       h3("Ordination and Aesthetics"),
@@ -237,6 +255,33 @@ server <- function(input, output){
     }
   })
   
+  ########################
+  ### Filter by Phylum ###
+  ########################
+  
+  humichip_phylum <- reactive({
+    
+    if(input$select_phylum){
+      humichip_probe() %>%
+        filter(Phylum %in% input$phylum)
+    } else if (!input$select_phylum) {
+      humichip_probe()
+    } else {
+      stopApp()
+    }
+  })
+  
+  #########################################
+  ### Render list of Phyla if applicable ##
+  #########################################
+  output$phyla <- renderUI({
+    
+    if(input$select_phylum){
+      checkboxGroupInput("phylum", "Select Phyla:",
+                         choices = phylum_choices, inline = TRUE)
+    }
+  })
+  
   
   
   
@@ -338,7 +383,7 @@ server <- function(input, output){
   
   humichip_final <- reactive({
     # Subset Samples based on treat_pathogen_filtered
-    humichip_probe() %>%
+    humichip_phylum() %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
                                    "subcategory2", "Phylum",

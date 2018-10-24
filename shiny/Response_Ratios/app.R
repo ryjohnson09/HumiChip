@@ -228,44 +228,29 @@ server <- function(input, output){
   })
   
   
-  ###############################################
-  ### Select for Functional or STR_SPE probes ###
-  ###############################################
-  
-  humichip_probe <- reactive({
-    
-    # If cat_choice == Phylum, filter for STR_SPE
-    # and add Phylum category
-    if(input$cat_choice == "Phylum"){
-      humichip_select() %>%
-        filter(gene == "STR_SPE") %>%
-        filter(str_detect(lineage, "Bacteria")) %>%
-        filter(str_detect(lineage, ";phylum")) %>%
-        mutate(Phylum = gsub(x = lineage, # Phylum column
-                             pattern = ".*;phylum:(\\w*\\s*[-]*\\w*);.*", 
-                             replacement = "\\1"))
-      
-    # If cat_choice == Functional group
-    } else if (input$cat_choice != "Phylum"){
-      humichip_select() %>%
-        filter(gene != "STR_SPE") %>%
-        mutate(Phylum = NA)
-    } else {
-      stopApp("Problem filtering STR_SPE vs Functional Probes")
-    }
-  })
-  
   ########################
   ### Filter by Phylum ###
   ########################
   
   humichip_phylum <- reactive({
     
+    # If filtering by phylum, and phylum column (only bacteria with phylum designation)
     if(input$select_phylum){
-      humichip_probe() %>%
-        filter(Phylum %in% input$phylum)
+      humichip_select() %>%
+        filter(str_detect(lineage, "Bacteria")) %>%
+        filter(str_detect(lineage, ";phylum")) %>%
+        mutate(Phylum = gsub(x = lineage, # Phylum column
+                             pattern = ".*;phylum:(\\w*\\s*[-]*\\w*);.*", 
+                             replacement = "\\1")) %>%
+        filter(Phylum %in% input$phylum) # Filter step
+        
     } else if (!input$select_phylum) {
-      humichip_probe()
+      humichip_select() %>%
+        filter(str_detect(lineage, "Bacteria")) %>%
+        filter(str_detect(lineage, ";phylum")) %>%
+        mutate(Phylum = gsub(x = lineage, # Phylum column
+                             pattern = ".*;phylum:(\\w*\\s*[-]*\\w*);.*", 
+                             replacement = "\\1"))
     } else {
       stopApp()
     }
@@ -283,6 +268,26 @@ server <- function(input, output){
   })
   
   
+  ###############################################
+  ### Select for Functional or STR_SPE probes ###
+  ###############################################
+  
+  humichip_probe <- reactive({
+    
+    # If cat_choice == Phylum, filter for STR_SPE
+    # and add Phylum category
+    if(input$cat_choice == "Phylum"){
+      humichip_phylum() %>%
+        filter(gene == "STR_SPE")
+      
+    # If cat_choice == Functional group
+    } else if (input$cat_choice != "Phylum"){
+      humichip_phylum() %>%
+        filter(gene != "STR_SPE")
+    } else {
+      stopApp("Problem filtering STR_SPE vs Functional Probes")
+    }
+  })
   
   
   #######################################
@@ -383,7 +388,7 @@ server <- function(input, output){
   
   humichip_final <- reactive({
     # Subset Samples based on treat_pathogen_filtered
-    humichip_phylum() %>%
+    humichip_probe() %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
                                    "subcategory2", "Phylum",

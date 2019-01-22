@@ -9,25 +9,42 @@
 library(tidyverse)
 library(readxl)
 
-## Read in the GeoChip Decoder -----------------------------
-ID_list <- read_excel("data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx") %>%
-  select_if(~ !all(is.na(.)))
+## Read in the Decoder ------------------------------------
+ID_list <- suppressMessages(suppressWarnings(read_excel("data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx")))
 
-glomics_ID <- unlist(select(ID_list, starts_with("X")), # stack all glomics ID values
-                     use.names = FALSE)
+## Modify Decoder ---------------------------------------
 
-study_ID <- unlist(select(ID_list, starts_with("study")), # stack all study ID values
-                   use.names = FALSE)
+# Replace column names
+colnames(ID_list) <- 1:ncol(ID_list)
 
-ID_list <- tibble(glomics_ID, study_ID) %>% # merge into tibble, drop NA rows
-  drop_na()
+# Remove columns that are all NA
+ID_list <- ID_list %>%
+  select_if(~!all(is.na(.)))
 
-# Split study_ID to "study_ID" and "visit_numer
+# Stack all glomics ID values
+glomics_ID <- na.omit(unlist(select_if(ID_list, is.double), 
+                     use.names = FALSE))
+# Stack all study ID values
+study_ID <- na.omit(unlist(select_if(ID_list, is.character), 
+                           use.names = FALSE))
+
+# merge into tibble
+ID_list <- tibble(glomics_ID, study_ID)
+
+## Split study_ID to "study_ID" and "visit_numer" ---------------------------
 ID_list <- ID_list %>%
   separate(study_ID, into = c("study_id", "visit_number"), "(?<=\\d{4})-") %>%
   mutate(glomics_ID = paste0("X", glomics_ID)) # Add "X" in front of glomics_ID
 
 rm(glomics_ID, study_ID) # clean up
+
+# Filter for samples in Humichip data
+humichip_samples <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip.tsv", n_max = 1))) %>%
+  select(starts_with("X")) %>%
+  colnames()
+
+ID_list <- ID_list %>%
+  filter(glomics_ID %in% humichip_samples)
 
 
 ## Write to processed data -----------------------

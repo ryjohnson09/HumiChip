@@ -12,7 +12,7 @@ shinyServer(function(input, output){
   
   
   
-  # Read in Raw Data with Progress Bar --------------------------------
+  ## Read in Raw Data with Progress Bar --------------------------------
   withProgress(message = "Reading in Data:", {
                
                # Humichip
@@ -30,7 +30,49 @@ shinyServer(function(input, output){
                ID_decoder <- suppressWarnings(suppressMessages(read_csv("ID_Decoder_Humichip.csv")))
       })
   
+  
+  
+  
+  ## Filter Patients from Data -----------------------------------------
+  
+  # Filter ID_decoder by visit number (matched or non-matched)
+  ID_visit <- reactive({
+    # If non-matched
+    if (!input$matched){
+      filter(ID_decoder, visit_number %in% as.numeric(input$visit_number))
+    
+    # if matched 
+    } else if (input$matched){
+      matched_samples <- ID_decoder %>%
+        filter(visit_number %in% as.numeric(input$visit_number)) %>%
+        count(study_id) %>%
+        filter(n == length(as.numeric(input$visit_number))) %>%
+        pull(study_id)
+      
+      # Get glomics ID's that correspond to the patients
+      # with matched samples
+      matched_glomics <- ID_decoder %>%
+        filter(visit_number %in% as.numeric(input$visit_number)) %>%
+        filter(study_id %in% matched_samples) %>%
+        pull(glomics_ID)
+      
+      # Filter ID Decoder for only matched
+      filter(ID_decoder, glomics_ID %in% matched_glomics)
+    }
+  })
+  
+  # Filter from Humichip Data
+  humi_filtered <- eventReactive(input$action, {
+    humichip %>%
+      select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
+                                   "annotation", "geneCategory", "subcategory1",
+                                   "subcategory2", ID_visit()$glomics_ID))
+  })
+  
+  
+  
+  
   # Show Humi Data Table
-  output$humi_table <- renderTable({head(humichip)})
+  output$humi_table <- renderTable({head(humi_filtered())})
 
 })

@@ -21,9 +21,17 @@ shinyUI(fluidPage(
                   #############
                   ### Visit ###
                   #############
-                  checkboxGroupInput('Visit_Number', 'Visit:', choices = list("Visit 1" = 1,"Visit 4" = 4,"Visit 5" = 5), 
-                  selected = c(1, 4, 5), inline = TRUE)
+                  checkboxGroupInput('visit_number', 'Visit:', choices = list("Visit 1" = 1,"Visit 4" = 4,"Visit 5" = 5), 
+                  selected = c(1, 4, 5), inline = TRUE),
+                  
+                  ###############
+                  ### Matched ###
+                  ###############
+                  checkboxInput("matched", label = "Matched Samples?", value = TRUE)
   )),
+  
+  # Perform Ordination Button
+  actionButton("action", label = "Analyze"),
 
   # Side Bar Width
   width = 4),

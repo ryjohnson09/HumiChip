@@ -1,0 +1,34 @@
+###############################
+#### Humichip Shiny App UI ####
+###############################
+
+## Load Libraries -----------------------------------
+library(shiny)
+
+# Define UI ----------------------------------------
+shinyUI(fluidPage(
+  
+  # Application title
+  titlePanel("Humichip Ordination"),
+  
+  # Sidebar 
+  sidebarLayout(
+  sidebarPanel(
+      
+  # Sample Selection
+  fluidRow(column(12,
+                  
+                  #############
+                  ### Visit ###
+                  #############
+                  checkboxGroupInput('Visit_Number', 'Visit:', choices = list("Visit 1" = 1,"Visit 4" = 4,"Visit 5" = 5), 
+                  selected = c(1, 4, 5), inline = TRUE)
+  )),
+
+  # Side Bar Width
+  width = 4),
+    
+  # Visualize Ordination Plot/data table
+  mainPanel(
+     fluidRow(column(12,tableOutput("humi_table")))
+))))

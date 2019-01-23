@@ -23,5 +23,7 @@ docs/
 ###############
 shiny/*/*
 !shiny/*/app.R
+!shiny/*/ui.R
+!shiny/*/server.R
 .Rproj.user
 HumiChip.Rproj

@@ -48,4 +48,4 @@ ID_list <- ID_list %>%
 
 
 ## Write to processed data -----------------------
-write_csv(ID_list, "data/processed/ID_Decoder.csv")
+write_csv(ID_list, "data/processed/ID_Decoder_Humichip.csv")

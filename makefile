@@ -7,17 +7,6 @@ list:
 
 
 
-# Create decoder that links Glomics ID's to TrEAT Subject IDs
-# Depends on:	data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx
-#		code/ID_Decoder.R
-# Produces:	data/processed/ID_Decoder.csv
-data/processed/ID_Decoder.csv : data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
-				code/ID_Decoder.R
-	R -e "source('code/ID_Decoder.R')"
-
-
-
-
 # Merge all of the Humichip datasets into one
 # Depends on:	data/raw/HumiChip_New/HumiChip-1-LTO.txt
 #		data/raw/HumiChip_New/HumiChip-2-LTO.txt
@@ -34,6 +23,16 @@ data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 				     code/Merge_Humichip.R
 	R -e "source('code/Merge_Humichip.R', echo=T)"
 
+
+# Create decoder that links Glomics ID's to TrEAT Subject IDs
+# Depends on:   data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx
+#               code/ID_Decoder_Humichip.R
+#               data/processed/Merged_humichip.tsv
+# Produces:     data/processed/ID_Decoder.csv
+data/processed/ID_Decoder_Humichip.csv : data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
+                                	 code/ID_Decoder_Humichip.R\
+					 data/processed/Merged_humichip.tsv
+	R -e "source('code/ID_Decoder_Humichip.R')"
 
 
 # Make the Merged Humichip data long/tidy

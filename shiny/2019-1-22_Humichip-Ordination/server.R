@@ -37,6 +37,7 @@ shinyServer(function(input, output){
   
   # Filter ID_decoder by visit number (matched or non-matched)
   ID_visit <- reactive({
+    
     # If non-matched
     if (!input$matched){
       filter(ID_decoder, visit_number %in% as.numeric(input$visit_number))
@@ -61,12 +62,29 @@ shinyServer(function(input, output){
     }
   })
   
+  
+  # Filter Treat based on treatment group, then modify ID_visit
+  ID_visit_treatment <- reactive({
+    treat_studyIDs <- treat %>%
+      # Remove LOP and PLA samples
+      filter(!Treatment %in% c("LOP", "PLA")) %>%
+      # Samples in select treatment groups
+      filter(Treatment %in% input$treatment_groups) %>%
+      pull(STUDY_ID)
+    
+    # Filter ID_decoder
+    ID_visit() %>%
+      filter(study_id %in% treat_studyIDs)
+  })
+  
+  
+  
   # Filter from Humichip Data
   humi_filtered <- eventReactive(input$action, {
     humichip %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
-                                   "subcategory2", ID_visit()$glomics_ID))
+                                   "subcategory2", ID_visit_treatment()$glomics_ID))
   })
   
   

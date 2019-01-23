@@ -27,7 +27,14 @@ shinyUI(fluidPage(
                   ###############
                   ### Matched ###
                   ###############
-                  checkboxInput("matched", label = "Matched Samples?", value = TRUE)
+                  checkboxInput("matched", label = "Matched Samples?", value = TRUE),
+                  
+                  ########################
+                  ### Treatment Groups ###
+                  ########################
+                  checkboxGroupInput('treatment_groups', 'Treatment Groups:', 
+                                     choices = c("LEV", "RIF", "AZI"), 
+                                     selected = c("LEV", "RIF", "AZI"), inline = TRUE)
   )),
   
   # Perform Ordination Button

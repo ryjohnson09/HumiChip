@@ -78,6 +78,10 @@ shinyServer(function(input, output){
   })
   
   
+  # Filter treat based on pathogen detection
+  
+  
+  
   
   # Filter from Humichip Data
   humi_filtered <- eventReactive(input$action, {

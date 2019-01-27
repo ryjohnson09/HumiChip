@@ -62,7 +62,7 @@ humichip_samples <- read_tsv("data/processed/Merged_humichip.tsv", n_max = 1)
 ## Import Glomics ID decoder list --------------------------------------
 
 # Read in decoder
-ID_list <- read.csv("data/processed/ID_Decoder.csv")
+ID_list <- read.csv("data/processed/ID_Decoder_Humichip.csv")
 
 # Filter ID_list to only include samples from Glomics Data
 ID_list <- ID_list %>%

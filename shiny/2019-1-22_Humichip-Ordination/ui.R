@@ -66,7 +66,7 @@ shinyUI(fluidPage(
   
   # Probe Selection
   fluidRow(column(12,
-                  h3("Sample Selection"),
+                  h3("Probe Selection"),
                   
                   ##################
                   ### Probe Type ###
@@ -87,15 +87,41 @@ shinyUI(fluidPage(
                                                  "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
                                                  "RESPIRATION", "N-GLYCAN_DEGRADATION"))
   )),
+  
+  # Plot Aesthetics
+  fluidRow(column(12,
+                  h3("Plot Aesthetics"),
+                  
+                  ####################
+                  ### Point Colors ###
+                  ####################
+                  radioButtons("point_color", "Color Points By:", choices =  list(
+                    "None" = "None",
+                    "Visit" = "visit_number",
+                    "Treatment" = "Treatment",
+                    "Pathogens" = "pathogens",
+                    "Impact on Activity" = "Impact_of_illness_on_activity_level",
+                    "Past 8 hours diarrhea severity" = "LLS_severity",
+                    "ESBL Visit 1" = "ESBL_V1",
+                    "ESBL Visit 5" = "ESBL_V5"), 
+                    selected = "Treatment")
+  )),
+                  
+                  
                   
   
   # Perform Ordination Button
   actionButton("action", label = "Analyze"),
+  
+  # Download plot button
+  downloadButton('downloadPlot','Download Plot'),
 
   # Side Bar Width
   width = 4),
     
   # Visualize Ordination Plot/data table
   mainPanel(
-     fluidRow(column(12,tableOutput("humi_table")))
+    plotOutput("humi_plot", width = "800px", height = "800px"),
+    br(),
+    fluidRow(column(12,tableOutput("humi_table")))
 ))))

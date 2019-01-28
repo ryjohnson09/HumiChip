@@ -6,6 +6,7 @@
 library(shiny)
 library(tidyverse)
 library(vegan)
+library(ggExtra)
 
 # Define server -------------------------------------
 shinyServer(function(input, output){
@@ -191,7 +192,7 @@ shinyServer(function(input, output){
   
   
   ## Ordination Analysis ----------------------------------------------------------
-  humichip_ordination_results <- eventReactive(input$action, {
+  humi_ordination_results <- eventReactive(input$action, {
     withProgress(message = "Performing Ordination:", {
     
     ###########
@@ -199,18 +200,113 @@ shinyServer(function(input, output){
     ###########
     incProgress(amount = 1/2)
     humi_PCA <- vegan::rda(t(humi_matrix()))
-    humi_PCA_coordinates <- scores(humi_PCA, display = "sites")
-    
-    # Make tibble
-    as.data.frame(humi_PCA_coordinates) %>%
-      rownames_to_column(var = "glomics_ID")
     })
   })
+  
+  # Extract coordinates as tibble
+  humi_PCA_coordinates <- eventReactive(input$action, {
+    as.data.frame(scores(humi_ordination_results(), display = "sites")) %>%
+      rownames_to_column(var = "glomics_ID")
+  })
+    
+  # Get Proportion explained
+  PCA_prop_expl <- eventReactive(input$action, {
+    summary(eigenvals(humi_ordination_results()))[2,] * 100
+  })
+
+  
+  
+  
+  ## Merge Ordination Analysis with Metadata --------------------------------------
+  humi_ordination_metadata <- eventReactive(input$action, {
+    humi_PCA_coordinates() %>%
+      # Add study ID's
+      full_join(., ID_v_t_d_p(), by = "glomics_ID") %>%
+      # Add in pathogen list from treat_pathogen()
+      left_join(., treat_pathogens(), by = c("study_id" = "STUDY_ID")) %>%
+      # Add in remaining treat metadata
+      left_join(., treat, by = c("study_id" = "STUDY_ID")) %>%
+      
+      # Factor Columns
+      mutate(visit_number = factor(visit_number)) %>%
+      mutate(Impact_of_illness_on_activity_level = factor(Impact_of_illness_on_activity_level))
+  })
+    
+  
+  
+  
+    
+  ## Plot --------------------------------------------------------------
+  
+  ################
+  ### PCA PLOT ###
+  ################
+  plotInput <- reactive({
+    
+    # Color of points
+    my_fill <- ifelse(input$point_color == "None", "NULL", input$point_color)
+    
+    # Aesthetic sizes
+    axis_title_size <- 18
+    axis_text_size <- 16
+    title_size <- 20
+    legend_text_size <- 13
+    point_size <- 5
+    
+    # PCA plot
+    pca_plot <- ggplot(humi_ordination_metadata(),
+                       aes_string(x = "PC1", 
+                                  y = "PC2", 
+                                  color = my_fill)) +
+      
+      # Set up proportion explained
+      xlab(paste0("PC1(", round(PCA_prop_expl()[[1]], 2), "%)")) +
+      ylab(paste0("PC2(", round(PCA_prop_expl()[[2]], 2), "%)")) +
+      
+      
+      geom_point(pch = 1, alpha = 1, size = point_size) +
+      geom_point(pch = 19, alpha = 0.8, size = point_size) +
+      ggtitle("PCA Analysis") +
+      theme_minimal() +
+      theme(
+        axis.title.x = element_text(size = axis_title_size),
+        axis.text.x = element_text(size = axis_text_size, hjust = 1),
+        axis.text.y = element_text(size = axis_text_size),
+        axis.title.y = element_text(size = axis_title_size),
+        plot.title = element_text(size = title_size, face = "bold"),
+        legend.text = element_text(size = legend_text_size),
+        legend.title = element_blank()) +
+      guides(fill = guide_legend(override.aes = list(size=7)))
+    
+    ggMarginal(pca_plot, groupColour = TRUE, groupFill = TRUE)
+  })
+  
+  
+  ####################
+  ### Display Plot ###
+  ####################
+  output$humi_plot <- renderPlot({
+    print(plotInput())
+  })
+  
+  #####################
+  ### Download plot ###
+  #####################
+  
+  output$downloadPlot <- downloadHandler(
+    filename = function(){paste("shiny_plot",'.png',sep='')},
+    content = function(file){
+      ggsave(file, plot=plotInput())
+    })
+    
+  
+  
+  
   
   
   
   
   # Show Humi Data Table
-  output$humi_table <- renderTable({humichip_ordination_results()})
+  output$humi_table <- renderTable({humi_ordination_metadata()})
 
 })

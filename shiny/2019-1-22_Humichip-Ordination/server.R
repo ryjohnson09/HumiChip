@@ -38,7 +38,7 @@ shinyServer(function(input, output){
   ##############################
   ### Visit Number / Matched ###
   ##############################
-  ID_visit <- reactive({
+  ID_v <- reactive({
     
     # If non-matched
     if (!input$matched){
@@ -68,7 +68,7 @@ shinyServer(function(input, output){
   ##########################################
   ### Treatment Group / Remove LOP & PLA ###
   ##########################################
-  ID_visit_treatment <- reactive({
+  ID_v_t <- reactive({
     treat_studyIDs <- treat %>%
       # Remove LOP and PLA samples
       filter(!Treatment %in% c("LOP", "PLA")) %>%
@@ -77,9 +77,25 @@ shinyServer(function(input, output){
       pull(STUDY_ID)
     
     # Filter ID_decoder
-    ID_visit() %>%
+    ID_v() %>%
       filter(study_id %in% treat_studyIDs)
   })
+  
+  
+  
+  ########################
+  ### Disease Severity ###
+  ########################
+  ID_v_t_d <- reactive({
+    treat_disease <- treat %>%
+      filter(LLS_severity %in% input$disease_severity) %>%
+      pull(STUDY_ID)
+    
+    # Filter ID_decoder
+    ID_v_t() %>%
+      filter(study_id %in% treat_disease)
+  })
+  
   
   
   ##########################
@@ -124,12 +140,12 @@ shinyServer(function(input, output){
   })
   
   # Filter ID if selecting pathogens
-  ID_visit_treatment_pathogens <- reactive({
+  ID_v_t_d_p <- reactive({
     if (input$pathogen_select){
-    ID_visit_treatment() %>%
+    ID_v_t_d() %>%
       filter(study_id %in% treat_pathogens()$STUDY_ID)
     } else if (!input$pathogen_select){
-      ID_visit_treatment()
+      ID_v_t_d()
     }
   })
   
@@ -143,7 +159,7 @@ shinyServer(function(input, output){
     humichip %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
-                                   "subcategory2", ID_visit_treatment_pathogens()$glomics_ID))
+                                   "subcategory2", ID_v_t_d_p()$glomics_ID))
   })
   
   

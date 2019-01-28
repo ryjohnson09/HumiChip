@@ -37,6 +37,13 @@ shinyUI(fluidPage(
                                      selected = c("LEV", "RIF", "AZI"), inline = TRUE),
                   
                   ########################
+                  ### Disease Severity ###
+                  ########################
+                  checkboxGroupInput("disease_severity", "Disease Severity:",
+                                     choices = c("mild", "moderate", "severe"),
+                                     selected = c("mild", "moderate", "severe")),
+                  
+                  ########################
                   ### Detection Method ###
                   ########################
                   br(),
@@ -51,7 +58,8 @@ shinyUI(fluidPage(
                   ##########################
                   checkboxGroupInput("pathogens", "Select Pathogens:",
                                      choices = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus"),
-                                     selected = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus")),
+                                     selected = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus"),
+                                     inline = TRUE),
                   checkboxInput("allow_coinfections", label = "Allow Coinfections?", value = FALSE)
   )),
   

@@ -5,6 +5,7 @@
 ## Load Libraries -----------------------------------
 library(shiny)
 
+
 # Define UI ----------------------------------------
 shinyUI(fluidPage(
   
@@ -17,7 +18,7 @@ shinyUI(fluidPage(
       
   # Sample Selection
   fluidRow(column(12,
-                  
+                  h3("Sample Selection"),
                   #############
                   ### Visit ###
                   #############
@@ -62,6 +63,31 @@ shinyUI(fluidPage(
                                      inline = TRUE),
                   checkboxInput("allow_coinfections", label = "Allow Coinfections?", value = FALSE)
   )),
+  
+  # Probe Selection
+  fluidRow(column(12,
+                  h3("Sample Selection"),
+                  
+                  ##################
+                  ### Probe Type ###
+                  ##################
+                  selectInput('probe_type', 'Probe Type:', choices = c("Functional", "Strain/Species", "All"), 
+                              selected = "All"),
+                  checkboxGroupInput("geneCategory", "Gene Category:", 
+                                     choices = c("VIRULENCE", "PURINE_METABOLISM", 
+                                                 "GLYCAN_BIOSYNTHESIS_AND_METABOLISM", 
+                                                 "AMINO_ACID_SYNTHESIS", "EXOTIC_METABOLISMS", 
+                                                 "COFACTOR_BIOSYNTHESIS", "GLYCOSAMINOGLYCAN_DEGRADATION", 
+                                                 "FEEDER_PATHWAYS_TO_GLYCOLYSIS", 
+                                                 "CENTRAL_CARBON_METABOLISM_PATHWAYS", "NITROGEN_METABOLISM", 
+                                                 "GLYCAN_STRUCTURES_-_DEGRADATION", 
+                                                 "AMINO_ACID_TRANSPORT_AND_METABOLISM", "ORGANIC_ACIDS", 
+                                                 "PYRIMIDINE_METABOLISM", "ISOPRENOID_BIOSYNTHESIS", 
+                                                 "COMPLEX_CARBOHYDRATES", "FATTY_ACID_METABOLISM", 
+                                                 "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
+                                                 "RESPIRATION", "N-GLYCAN_DEGRADATION"))
+  )),
+                  
   
   # Perform Ordination Button
   actionButton("action", label = "Analyze"),

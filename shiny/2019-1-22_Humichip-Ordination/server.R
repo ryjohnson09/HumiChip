@@ -149,14 +149,25 @@ shinyServer(function(input, output){
     }
   })
   
+  ## Probe Filtering ---------------------------------------------------------
+  humi_probes_filtered <- reactive({
+    
+    if(input$probe_type == "Functional"){
+      humichip %>%
+        filter(geneCategory %in% input$geneCategory)
+    } else if (input$probe_type == "Strain/Species"){
+      humichip %>%
+        filter(gene == "STR_SPE")
+    } else if (input$probe_type == "All"){
+      humichip
+    }
+  })
   
   
   
-  
-  
-  # Filter from Humichip Data
-  humi_filtered <- eventReactive(input$action, {
-    humichip %>%
+  ## Filter patients from Humichip Data --------------------------------------
+  humi_probes_patient_filtered <- eventReactive(input$action, {
+    humi_probes_filtered() %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
                                    "subcategory2", ID_v_t_d_p()$glomics_ID))
@@ -165,7 +176,8 @@ shinyServer(function(input, output){
   
   
   
+  
   # Show Humi Data Table
-  output$humi_table <- renderTable({head(humi_filtered())})
+  output$humi_table <- renderTable({head(humi_probes_patient_filtered())})
 
 })

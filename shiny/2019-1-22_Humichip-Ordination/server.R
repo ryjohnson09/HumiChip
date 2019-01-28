@@ -174,10 +174,43 @@ shinyServer(function(input, output){
   })
   
   
+  ## Prepare Data for Ordination Analysis ----------------------------------------
+  humi_matrix <- eventReactive(input$action, {
+   
+     # Set NA's to 0 and values not NA to original value
+    humi1 <- humi_probes_patient_filtered() %>%
+      select_if(colnames(.) %in% ID_v_t_d_p()$glomics_ID) %>%
+      mutate_all(funs(ifelse(is.na(.), 0, .)))
+    
+    # Remove rows that equal 0
+    humi1 <- humi1[rowSums(humi1) != 0,]
+    
+    # Return matrix
+    as.matrix(humi1)
+  })
+  
+  
+  ## Ordination Analysis ----------------------------------------------------------
+  humichip_ordination_results <- eventReactive(input$action, {
+    withProgress(message = "Performing Ordination:", {
+    
+    ###########
+    ### PCA ###
+    ###########
+    incProgress(amount = 1/2)
+    humi_PCA <- vegan::rda(t(humi_matrix()))
+    humi_PCA_coordinates <- scores(humi_PCA, display = "sites")
+    
+    # Make tibble
+    as.data.frame(humi_PCA_coordinates) %>%
+      rownames_to_column(var = "glomics_ID")
+    })
+  })
+  
   
   
   
   # Show Humi Data Table
-  output$humi_table <- renderTable({head(humi_probes_patient_filtered())})
+  output$humi_table <- renderTable({humichip_ordination_results()})
 
 })

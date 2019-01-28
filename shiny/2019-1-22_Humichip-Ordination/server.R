@@ -33,9 +33,11 @@ shinyServer(function(input, output){
   
   
   
-  ## Filter Patients from Data -----------------------------------------
+  ## Filter Patients from Data -------------------------------------------------------
   
-  # Filter ID_decoder by visit number (matched or non-matched)
+  ##############################
+  ### Visit Number / Matched ###
+  ##############################
   ID_visit <- reactive({
     
     # If non-matched
@@ -63,7 +65,9 @@ shinyServer(function(input, output){
   })
   
   
-  # Filter Treat based on treatment group, then modify ID_visit
+  ##########################################
+  ### Treatment Group / Remove LOP & PLA ###
+  ##########################################
   ID_visit_treatment <- reactive({
     treat_studyIDs <- treat %>%
       # Remove LOP and PLA samples
@@ -78,7 +82,9 @@ shinyServer(function(input, output){
   })
   
   
-  # Filter treat based on pathogen detection
+  ##########################
+  ### Pathogen Detection ###
+  ##########################
   treat_pathogens <- reactive({
     treat_select <- treat %>%
       # Select columns with appropriate detection method
@@ -117,6 +123,16 @@ shinyServer(function(input, output){
     treat_new
   })
   
+  # Filter ID if selecting pathogens
+  ID_visit_treatment_pathogens <- reactive({
+    if (input$pathogen_select){
+    ID_visit_treatment() %>%
+      filter(study_id %in% treat_pathogens()$STUDY_ID)
+    } else if (!input$pathogen_select){
+      ID_visit_treatment()
+    }
+  })
+  
   
   
   
@@ -127,13 +143,13 @@ shinyServer(function(input, output){
     humichip %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
-                                   "subcategory2", ID_visit_treatment()$glomics_ID))
+                                   "subcategory2", ID_visit_treatment_pathogens()$glomics_ID))
   })
   
   
   
   
   # Show Humi Data Table
-  output$humi_table <- renderTable({treat_pathogens()})
+  output$humi_table <- renderTable({head(humi_filtered())})
 
 })

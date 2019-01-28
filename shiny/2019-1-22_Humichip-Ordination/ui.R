@@ -39,6 +39,8 @@ shinyUI(fluidPage(
                   ########################
                   ### Detection Method ###
                   ########################
+                  br(),
+                  h4("Select by Pathogen"),
                   checkboxInput("pathogen_select", label = "Select by Pathogen?", value = FALSE),
                   radioButtons("detection_method", "Detection Method:", 
                                choices = c("taq", "culture", "either", "both"),

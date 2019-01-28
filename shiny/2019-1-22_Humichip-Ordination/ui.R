@@ -34,7 +34,23 @@ shinyUI(fluidPage(
                   ########################
                   checkboxGroupInput('treatment_groups', 'Treatment Groups:', 
                                      choices = c("LEV", "RIF", "AZI"), 
-                                     selected = c("LEV", "RIF", "AZI"), inline = TRUE)
+                                     selected = c("LEV", "RIF", "AZI"), inline = TRUE),
+                  
+                  ########################
+                  ### Detection Method ###
+                  ########################
+                  checkboxInput("pathogen_select", label = "Select by Pathogen?", value = FALSE),
+                  radioButtons("detection_method", "Detection Method:", 
+                               choices = c("taq", "culture", "either", "both"),
+                               selected = "both", inline = TRUE),
+                  
+                  ##########################
+                  ### Pathogen Selection ###
+                  ##########################
+                  checkboxGroupInput("pathogens", "Select Pathogens:",
+                                     choices = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus"),
+                                     selected = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus")),
+                  checkboxInput("allow_coinfections", label = "Allow Coinfections?", value = FALSE)
   )),
   
   # Perform Ordination Button

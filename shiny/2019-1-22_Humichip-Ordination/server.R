@@ -79,6 +79,45 @@ shinyServer(function(input, output){
   
   
   # Filter treat based on pathogen detection
+  treat_pathogens <- reactive({
+    treat_select <- treat %>%
+      # Select columns with appropriate detection method
+      select(STUDY_ID, ends_with(input$detection_method)) %>%
+      # Determine if co-infection or not
+      mutate(num_pathogens = rowSums(. == "yes", na.rm = TRUE))
+    
+    # Allow Coinfections?
+    if (!input$allow_coinfections){
+      treat_select_coinfections <- treat_select %>%
+        filter(num_pathogens == 1)
+    } else if (input$allow_coinfections){
+      treat_select_coinfections <- treat_select
+    }
+    
+    treat_new <- treat_select_coinfections %>%
+      # Select for pathogens of interest
+      select(STUDY_ID, paste(input$pathogens, input$detection_method, sep = "_")) %>%
+      # Replace yes no with Pathogen
+      mutate_at(vars(matches(input$detection_method)),
+                funs(ifelse(. == "yes", gsub(x = deparse(substitute(.)), pattern = "_.*$", replacement = ""), ""))) %>%
+      # If sample has an NA, remove it (wasn't tested)
+      mutate(has_na = rowSums(is.na(.))) %>%
+      filter(has_na == 0) %>%
+      select(-has_na) %>%
+      # If no pathogens of intereste detected, remove it
+      mutate(path_present = rowSums(. == "")) %>%
+      filter(path_present != length(input$pathogens)) %>%
+      select(-path_present) %>%
+      # Merge pathogens into one column
+      unite(pathogens, paste(input$pathogens, input$detection_method, sep = "_"), sep = "_") %>%
+      mutate(pathogens = str_replace(pathogens, "^_*", "")) %>%
+      mutate(pathogens = str_replace(pathogens, "_*$", "")) %>%
+      mutate(pathogens = str_replace(pathogens, "_+", "-"))
+    
+    treat_new
+  })
+  
+  
   
   
   
@@ -95,6 +134,6 @@ shinyServer(function(input, output){
   
   
   # Show Humi Data Table
-  output$humi_table <- renderTable({head(humi_filtered())})
+  output$humi_table <- renderTable({treat_pathogens()})
 
 })

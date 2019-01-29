@@ -31,6 +31,13 @@ shinyUI(fluidPage(
                   checkboxInput("matched", label = "Matched Samples?", value = TRUE),
                   
                   ########################
+                  ### Country of Origin ##
+                  ########################
+                  checkboxGroupInput('country', 'Country:', 
+                                     choices = c("Country-1", "Country-2", "Country-3"), 
+                                     selected = c("Country-1", "Country-2", "Country-3"), inline = TRUE),
+                  
+                  ########################
                   ### Treatment Groups ###
                   ########################
                   checkboxGroupInput('treatment_groups', 'Treatment Groups:', 
@@ -98,6 +105,7 @@ shinyUI(fluidPage(
                   radioButtons("point_color", "Color Points By:", choices =  list(
                     "None" = "None",
                     "Visit" = "visit_number",
+                    "Country" = "country",
                     "Treatment" = "Treatment",
                     "Pathogens" = "pathogens",
                     "Impact on Activity" = "Impact_of_illness_on_activity_level",
@@ -122,6 +130,8 @@ shinyUI(fluidPage(
   # Visualize Ordination Plot/data table
   mainPanel(
     plotOutput("humi_plot", width = "800px", height = "800px"),
+    br(),
+    textOutput("random_text"),
     br(),
     fluidRow(column(12,tableOutput("humi_table")))
 ))))

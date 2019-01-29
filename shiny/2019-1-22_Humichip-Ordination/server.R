@@ -8,6 +8,7 @@ library(tidyverse)
 library(vegan)
 library(ggExtra)
 
+
 # Define server -------------------------------------
 shinyServer(function(input, output){
   
@@ -41,6 +42,9 @@ shinyServer(function(input, output){
   ##############################
   ID_v <- reactive({
     
+    # Ensure that at least visit is selected
+    validate(need(input$visit_number, 'Please select at least one visit number'))
+    
     # If non-matched
     if (!input$matched){
       filter(ID_decoder, visit_number %in% as.numeric(input$visit_number))
@@ -66,10 +70,33 @@ shinyServer(function(input, output){
   })
   
   
+  #########################
+  ### Filter by Country ###
+  #########################
+  ID_v_c <- reactive({
+    
+    # Ensure that at least country is selected
+    validate(need(input$country, 'Please select at least one country'))
+    
+    # Select patients by country from treat
+    country_patients <- treat %>%
+      filter(country %in% input$country) %>%
+      pull(STUDY_ID)
+    
+    # Filter ID_Decoder
+    ID_v() %>%
+      filter(study_id %in% country_patients)
+  })
+  
+  
   ##########################################
   ### Treatment Group / Remove LOP & PLA ###
   ##########################################
-  ID_v_t <- reactive({
+  ID_v_c_t <- reactive({
+    
+    # Ensure that at least treatment group is selected
+    validate(need(input$treatment_groups, 'Please select at least one treatment group'))
+    
     treat_studyIDs <- treat %>%
       # Remove LOP and PLA samples
       filter(!Treatment %in% c("LOP", "PLA")) %>%
@@ -78,7 +105,7 @@ shinyServer(function(input, output){
       pull(STUDY_ID)
     
     # Filter ID_decoder
-    ID_v() %>%
+    ID_v_c() %>%
       filter(study_id %in% treat_studyIDs)
   })
   
@@ -87,13 +114,17 @@ shinyServer(function(input, output){
   ########################
   ### Disease Severity ###
   ########################
-  ID_v_t_d <- reactive({
+  ID_v_c_t_d <- reactive({
+    
+    # Ensure that at least disease severity is selected
+    validate(need(input$disease_severity, 'Please select at least one disease severity group'))
+    
     treat_disease <- treat %>%
       filter(LLS_severity %in% input$disease_severity) %>%
       pull(STUDY_ID)
     
     # Filter ID_decoder
-    ID_v_t() %>%
+    ID_v_c_t() %>%
       filter(study_id %in% treat_disease)
   })
   
@@ -133,20 +164,24 @@ shinyServer(function(input, output){
       select(-path_present) %>%
       # Merge pathogens into one column
       unite(pathogens, paste(input$pathogens, input$detection_method, sep = "_"), sep = "_") %>%
-      mutate(pathogens = str_replace(pathogens, "^_*", "")) %>%
-      mutate(pathogens = str_replace(pathogens, "_*$", "")) %>%
-      mutate(pathogens = str_replace(pathogens, "_+", "-"))
+      mutate(pathogens = str_replace_all(pathogens, "^_*", "")) %>%
+      mutate(pathogens = str_replace_all(pathogens, "_*$", "")) %>%
+      mutate(pathogens = str_replace_all(pathogens, "_+", "-"))
     
     treat_new
   })
   
   # Filter ID if selecting pathogens
-  ID_v_t_d_p <- reactive({
+  ID_v_c_t_d_p <- reactive({
     if (input$pathogen_select){
-    ID_v_t_d() %>%
-      filter(study_id %in% treat_pathogens()$STUDY_ID)
+      
+      # Ensure that at least one pathogen is selected
+      validate(need(input$pathogens, 'Please select at least one Pathogen'))
+      
+      ID_v_c_t_d() %>%
+        filter(study_id %in% treat_pathogens()$STUDY_ID)
     } else if (!input$pathogen_select){
-      ID_v_t_d()
+      ID_v_c_t_d()
     }
   })
   
@@ -154,6 +189,9 @@ shinyServer(function(input, output){
   humi_probes_filtered <- reactive({
     
     if(input$probe_type == "Functional"){
+      # Ensure that at least one functional group is selected
+      validate(need(input$geneCategory, 'Please select at least one Functional Group'))
+      
       humichip %>%
         filter(geneCategory %in% input$geneCategory)
     } else if (input$probe_type == "Strain/Species"){
@@ -171,16 +209,18 @@ shinyServer(function(input, output){
     humi_probes_filtered() %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
-                                   "subcategory2", ID_v_t_d_p()$glomics_ID))
+                                   "subcategory2", ID_v_c_t_d_p()$glomics_ID))
   })
   
   
   ## Prepare Data for Ordination Analysis ----------------------------------------
   humi_matrix <- eventReactive(input$action, {
+    
+    validate(need(ncol(humi_probes_patient_filtered()) > 8, "No Patients meet criteria"))
    
-     # Set NA's to 0 and values not NA to original value
+    # Set NA's to 0 and values not NA to original value
     humi1 <- humi_probes_patient_filtered() %>%
-      select_if(colnames(.) %in% ID_v_t_d_p()$glomics_ID) %>%
+      select_if(colnames(.) %in% ID_v_c_t_d_p()$glomics_ID) %>%
       mutate_all(funs(ifelse(is.na(.), 0, .)))
     
     # Remove rows that equal 0
@@ -221,7 +261,7 @@ shinyServer(function(input, output){
   humi_ordination_metadata <- eventReactive(input$action, {
     humi_PCA_coordinates() %>%
       # Add study ID's
-      full_join(., ID_v_t_d_p(), by = "glomics_ID") %>%
+      full_join(., ID_v_c_t_d_p(), by = "glomics_ID") %>%
       # Add in pathogen list from treat_pathogen()
       left_join(., treat_pathogens(), by = c("study_id" = "STUDY_ID")) %>%
       # Add in remaining treat metadata
@@ -308,5 +348,9 @@ shinyServer(function(input, output){
   
   # Show Humi Data Table
   output$humi_table <- renderTable({humi_ordination_metadata()})
+  
+  output$random_text <- renderText({ 
+    paste(ncol(humi_probes_patient_filtered()), " columns")
+  })
 
 })

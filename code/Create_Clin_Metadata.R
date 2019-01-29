@@ -734,7 +734,7 @@ treat_full <- treat_clin %>%
   full_join(., treat_path, by = c("STUDY_ID"))
 
 ## Add Country ------------------------------------------------------
-treat_full1 <- treat_full %>%
+treat_full <- treat_full %>%
   mutate(country = ifelse(str_detect(STUDY_ID, "^48"), "Country-1", 
                    ifelse(str_detect(STUDY_ID, "^61"), "Country-2",
                    ifelse(str_detect(STUDY_ID, "^87"), "Country-3", "Other"))))

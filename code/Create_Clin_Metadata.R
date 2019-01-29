@@ -350,12 +350,15 @@ treat_path <- treat %>%
          Giardia_result_from_taq_stool_card_sample
          )
 
-# Convert all columns to numeric (will coerce 'undetermined' to NA)
+
 treat_path <- treat_path %>%
+  # Change 'Undertermined' to max threshold (40)
+  mutate_at(vars(-STUDY_ID, -ends_with("_routine_microbiology")), funs(ifelse(. == "Undetermined", 40, .))) %>%
+  # Convert all columns to numeric (will coerce 'Indeterminate' to NA)
   mutate_at(vars(-STUDY_ID, -ends_with("_routine_microbiology")), as.numeric) %>%
-  # Convert all values under 30 to 1 and over 35 to NA
+  # Convert all values under 35 to 1 and over 35 to NA
   mutate_at(vars(-STUDY_ID, -ends_with("_routine_microbiology")), funs(
-    ifelse(. < 30, 1, 0)))
+    ifelse(. < 35, 1, 0)))
 
 
 

@@ -7,6 +7,7 @@ library(shiny)
 library(tidyverse)
 library(vegan)
 library(ggExtra)
+library(ape)
 
 
 # Define server -------------------------------------
@@ -233,25 +234,57 @@ shinyServer(function(input, output){
   
   ## Ordination Analysis ----------------------------------------------------------
   humi_ordination_results <- eventReactive(input$action, {
-    withProgress(message = "Performing Ordination:", {
-    
-    ###########
-    ### PCA ###
-    ###########
-    incProgress(amount = 1/2)
-    humi_PCA <- vegan::rda(t(humi_matrix()))
+    withProgress(message = "Performing Ordination: ", {
+      
+      # Perform PCA analysis using vegan
+      if(input$ordination == "PCA"){
+        incProgress(amount = 1/2, detail = "PCA analysis")
+        humi_PCA <- vegan::rda(t(humi_matrix()))
+      # Perform PCoA analysis using ape 
+      } else if (input$ordination == "PCoA"){
+        incProgress(amount = 1/3, detail = "Calculating distance matrix")
+        humichip_dist <- vegan::vegdist(as.matrix(t(humi_matrix())))
+        incProgress(amount = 1/3, detail = "PCoA analysis")
+        ape::pcoa(humichip_dist, correction = "none")
+      # Perform DCA analysis using vegan
+      } else if (input$ordination == "DCA"){
+        incProgress(amount = 1/2, detail = "DCA analysis")
+        vegan::decorana(t(humi_matrix()))
+      } else {
+        stopApp("Error in running ordination")
+      }
     })
   })
   
+  
+  
   # Extract coordinates as tibble
-  humi_PCA_coordinates <- eventReactive(input$action, {
-    as.data.frame(scores(humi_ordination_results(), display = "sites")) %>%
-      rownames_to_column(var = "glomics_ID")
+  humi_coordinates <- eventReactive(input$action, {
+    
+    # PCA or DCA
+    if (input$ordination == "PCA" | input$ordination == "DCA"){
+      as.data.frame(scores(humi_ordination_results(), display = "sites")) %>%
+        rownames_to_column(var = "glomics_ID")
+    # If PCoA
+    } else if (input$ordination == "PCoA"){
+      as.data.frame(humi_ordination_results()$vectors[,1:2]) %>%
+        rownames_to_column(var = "glomics_ID")
+    } else {
+      stopApp("Error in extracting ordination coordinates")
+    }
   })
     
+  
+  
   # Get Proportion explained
-  PCA_prop_expl <- eventReactive(input$action, {
-    summary(eigenvals(humi_ordination_results()))[2,] * 100
+  ord_prop_expl <- eventReactive(input$action, {
+    if (input$ordination == "PCA"){
+      summary(eigenvals(humi_ordination_results()))[2,] * 100
+    } else if (input$ordination == "PCoA"){
+      humi_ordination_results()$values$Relative_eig * 100
+    } else {
+      stopApp("Error in extraction percent explaind by axes")
+    }
   })
 
   
@@ -259,7 +292,7 @@ shinyServer(function(input, output){
   
   ## Merge Ordination Analysis with Metadata --------------------------------------
   humi_ordination_metadata <- eventReactive(input$action, {
-    humi_PCA_coordinates() %>%
+    humi_coordinates() %>%
       # Add study ID's
       full_join(., ID_v_c_t_d_p(), by = "glomics_ID") %>%
       # Add in pathogen list from treat_pathogen()
@@ -277,36 +310,23 @@ shinyServer(function(input, output){
   
     
   ## Plot --------------------------------------------------------------
+  # Aesthetic sizes
+  axis_title_size <- 18
+  axis_text_size <- 16
+  title_size <- 20
+  legend_text_size <- 13
+  point_size <- 5
   
-  ################
-  ### PCA PLOT ###
-  ################
-  plotInput <- reactive({
-    
-    # Color of points
-    my_fill <- ifelse(input$point_color == "None", "NULL", input$point_color)
-    
-    # Aesthetic sizes
-    axis_title_size <- 18
-    axis_text_size <- 16
-    title_size <- 20
-    legend_text_size <- 13
-    point_size <- 5
-    
-    # PCA plot
-    pca_plot <- ggplot(humi_ordination_metadata(),
-                       aes_string(x = "PC1", 
-                                  y = "PC2", 
-                                  color = my_fill)) +
-      
-      # Set up proportion explained
-      xlab(paste0("PC1(", round(PCA_prop_expl()[[1]], 2), "%)")) +
-      ylab(paste0("PC2(", round(PCA_prop_expl()[[2]], 2), "%)")) +
-      
-      
-      geom_point(pch = 1, alpha = 1, size = point_size) +
-      geom_point(pch = 19, alpha = 0.8, size = point_size) +
-      ggtitle("PCA Analysis") +
+  # Fill
+  my_fill <- reactive({
+    ifelse(input$point_color == "None", "NULL", input$point_color)
+  })
+  
+  
+  # Set up Base Plot
+  humi_ord_base_plot <- reactive({
+
+    ggplot(humi_ordination_metadata()) +
       theme_minimal() +
       theme(
         axis.title.x = element_text(size = axis_title_size),
@@ -317,36 +337,80 @@ shinyServer(function(input, output){
         legend.text = element_text(size = legend_text_size),
         legend.title = element_blank()) +
       guides(fill = guide_legend(override.aes = list(size=7)))
+  })
+  
+  # eventReactive to chose plot type
+  plot_type <- eventReactive(input$action, {
+    ifelse(input$ordination == "PCA", "PCA",
+           ifelse(input$ordination == "DCA", "DCA", "PCoA"))
+  })
+
+  
+
+  plotInput <- reactive({
     
-    ggMarginal(pca_plot, groupColour = TRUE, groupFill = TRUE)
+    
+    ################
+    ### PCA PLOT ###
+    ################
+    if (plot_type() == "PCA"){
+      humi_ord_plot <- humi_ord_base_plot() +
+        xlab(paste0("PC1(", round(ord_prop_expl()[[1]], 2), "%)")) +
+        ylab(paste0("PC2(", round(ord_prop_expl()[[2]], 2), "%)")) +
+        geom_point(aes_string(x = "PC1", y = "PC2", color = my_fill()),
+                   pch = 1, alpha = 1, size = point_size) +
+        geom_point(aes_string(x = "PC1", y = "PC2", color = my_fill()),
+                   pch = 19, alpha = 0.8, size = point_size) +
+        ggtitle("PCA Analysis")
+      ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
+    
+    #################
+    ### PCoA PLOT ###
+    #################
+    } else if (plot_type() == "PCoA"){
+      humi_ord_plot <- humi_ord_base_plot() +
+        xlab(paste0("PCoA1(", round(ord_prop_expl()[[1]], 2), "%)")) +
+        ylab(paste0("PCoA2(", round(ord_prop_expl()[[2]], 2), "%)")) +
+        geom_point(aes_string(x = "Axis.1", y = "Axis.2", color = my_fill()),
+                   pch = 1, alpha = 1, size = point_size) +
+        geom_point(aes_string(x = "Axis.1", y = "Axis.2", color = my_fill()),
+                   pch = 19, alpha = 0.8, size = point_size) +
+        ggtitle("PCoA Analysis")
+      ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
+      
+    ################
+    ### DCA PLOT ###
+    ################
+    } else if (plot_type() == "DCA"){
+      humi_ord_plot <- humi_ord_base_plot() +
+        xlab("DCA1") +
+        ylab("DCA2") +
+        geom_point(aes_string(x = "DCA1", y = "DCA2", color = my_fill()),
+                   pch = 1, alpha = 1, size = point_size) +
+        geom_point(aes_string(x = "DCA1", y = "DCA2", color = my_fill()),
+                   pch = 19, alpha = 0.8, size = point_size) +
+        ggtitle("DCA Analysis")
+      ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
+    
+    } else {stopApp("Error generating plot")} 
   })
   
   
-  ####################
-  ### Display Plot ###
-  ####################
+
+  ## Display Plot ---------------------------------------------------
   output$humi_plot <- renderPlot({
     print(plotInput())
   })
   
-  #####################
-  ### Download plot ###
-  #####################
-  
+  ## Download plot --------------------------------------------------
   output$downloadPlot <- downloadHandler(
     filename = function(){paste("shiny_plot",'.png',sep='')},
     content = function(file){
       ggsave(file, plot=plotInput())
     })
     
-  
-  
-  
-  
-  
-  
-  
-  # Show Humi Data Table
+
+  ## Show Table ----------------------------------------------------
   output$humi_table <- renderTable({humi_ordination_metadata()})
   
   output$random_text <- renderText({ 

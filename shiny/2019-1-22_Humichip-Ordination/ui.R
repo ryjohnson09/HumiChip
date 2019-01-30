@@ -6,7 +6,7 @@
 library(shiny)
 
 
-# Define UI ----------------------------------------
+## Define UI ----------------------------------------
 shinyUI(fluidPage(
   
   # Application title
@@ -94,6 +94,17 @@ shinyUI(fluidPage(
                                                  "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
                                                  "RESPIRATION", "N-GLYCAN_DEGRADATION"))
   )),
+  
+  # Ordination Type
+  fluidRow(column(12,
+                  h3("Ordination Type"),
+                  
+                  ##################
+                  ### Ordination ###
+                  ##################
+                  radioButtons("ordination", "Ordination:", choices = c("PCA", "PCoA", "DCA"))
+  )),
+  
   
   # Plot Aesthetics
   fluidRow(column(12,

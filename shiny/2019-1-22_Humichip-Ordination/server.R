@@ -315,7 +315,7 @@ shinyServer(function(input, output){
   axis_text_size <- 16
   title_size <- 20
   legend_text_size <- 13
-  point_size <- 5
+  point_size <- 4
   
   # Fill
   my_fill <- reactive({
@@ -406,7 +406,7 @@ shinyServer(function(input, output){
   output$downloadPlot <- downloadHandler(
     filename = function(){paste("shiny_plot",'.png',sep='')},
     content = function(file){
-      ggsave(file, plot=plotInput())
+      ggsave(file, plot=plotInput(), width = 10, height = 9)
     })
     
 

@@ -7,7 +7,7 @@ library(tidyverse)
 #### Read in Files ####
 #######################
 
-ID_decoder <- suppressWarnings(suppressMessages(read_csv("ID_Decoder.csv")))
+ID_decoder <- suppressWarnings(suppressMessages(read_csv("ID_Decoder_Humichip.csv")))
 treat <- suppressWarnings(suppressMessages(read_csv("TrEAT_Clinical_Metadata_tidy.csv")))
 humichip <- suppressWarnings(suppressMessages(read_tsv("Merged_humichip.tsv")))
 
@@ -133,11 +133,15 @@ ui <- fluidPage(
                
                # Phyla output
                uiOutput("phyla"),
-               helpText("Select probes based on bacterial phyla")))),
+               helpText("Select probes based on bacterial phyla"),
+               
+               # Should signal intensity be converted to 0 and 1
+               checkboxInput("signal", "Convert probe signal to 0 or 1?", value = FALSE)
+               ))),
     
     
     fluidRow(
-      h3("Ordination and Aesthetics"),
+      h3("Aesthetics"),
       
       column(12, 
              wellPanel(
@@ -386,7 +390,7 @@ server <- function(input, output){
   ############################################
   
   
-  humichip_final <- reactive({
+  humichip_long <- reactive({
     # Subset Samples based on treat_pathogen_filtered
     humichip_probe() %>%
       select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
@@ -404,6 +408,21 @@ server <- function(input, output){
       left_join(., ID_decoder, by = c("glomics_ID")) %>%
       select(glomics_ID, study_id, visit_number, everything())
       
+  })
+  
+  
+  #######################################
+  ### Rel Abundance by probe presence ###
+  ### or probe signal ############### ###
+  #######################################
+  
+  humichip_final <- reactive({
+    if (input$signal){
+      humichip_long() %>%
+        mutate(Signal = ifelse(is.na(Signal), 0, 1))
+    } else {
+      humichip_long()
+    }
   })
   
   #################################

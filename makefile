@@ -20,7 +20,7 @@ data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 		                     data/raw/HumiChip_New/HumiChip-3-LTO.txt\
 		                     data/raw/HumiChip_New/HumiChip-4-LTO.txt\
 		                     data/raw/HumiChip_New/HumiChip-5-LTO.txt\
-				     code/Merge_Humichip.R
+  		           	     code/Merge_Humichip.R
 	R -e "source('code/Merge_Humichip.R', echo=T)"
 
 
@@ -32,7 +32,18 @@ data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 data/processed/ID_Decoder_Humichip.csv : data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
                                 	 code/ID_Decoder_Humichip.R\
 					 data/processed/Merged_humichip.tsv
-	R -e "source('code/ID_Decoder_Humichip.R')"
+	R -e "source('code/ID_Decoder_Humichip.R', echo=T)"
+	
+	
+# Process TaqMan data for visit 1 and visit 5
+# Depends on:	data/raw/Taqman_results.xlsx
+#		data/processed/ID_Decoder_Humichip.csv
+#		code/process_taq_humi.R
+# Produces:	data/processed/Taq_tidy.csv
+data/processed/Taq_tidy.csv : data/raw/Taqman_results.xlsx\
+		              data/processed/ID_Decoder_Humichip.csv\
+			      code/process_taq_humi.R
+	R -e "source('code/process_taq_humi.R', echo=T)"
 
 
 

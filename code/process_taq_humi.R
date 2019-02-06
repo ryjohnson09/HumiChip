@@ -10,7 +10,6 @@ library(readxl)
 # Read in data -------------------------------------------
 taq_data_visit1 <- read_xlsx("data/raw/Taqman_results.xlsx", sheet = 1)
 taq_data_visit5 <- read_xlsx("data/raw/Taqman_results.xlsx", sheet = 2)
-metadata <- read_csv("data/processed/TrEAT_Clinical_Metadata_tidy.csv")
 ID_Decoder <- read_csv("data/processed/ID_Decoder_Humichip.csv")
 
 

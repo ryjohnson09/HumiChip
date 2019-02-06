@@ -215,7 +215,12 @@ treat_clin <- treat_clin %>%
   mutate(LLS_severity = 
     ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation <= 1, "mild",
     ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation %in% c(2,3,4), "moderate",
-    ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation >= 5, "severe", NA))))
+    ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation >= 5, "severe", NA)))) %>% 
+  
+  mutate(ESBL_either =
+           ifelse(ESBL_V1 == "Positive" | ESBL_V5 == "Positive", "Positive", 
+           ifelse(is.na(ESBL_V1) & ESBL_V5 == "Negative", NA,
+           ifelse(ESBL_V1 == "Negative" & is.na(ESBL_V5), NA, NA))))
          
 
 ##########################
@@ -739,10 +744,14 @@ treat_full <- treat_full %>%
                    ifelse(str_detect(STUDY_ID, "^61"), "Country-2",
                    ifelse(str_detect(STUDY_ID, "^87"), "Country-3", "Other"))))
 
+## Add in Taq ESBL data ------------------------------------------
+taq_data <- read_csv("data/processed/Taq_tidy.csv")
+treat_full <- treat_full %>%
+  left_join(., taq_data, by = c("STUDY_ID" = "study_id"))
 
 ## Write to processed data ---------------------------------
 write_csv(treat_full, "data/processed/TrEAT_Clinical_Metadata_tidy.csv")
 
 
 ## Clean ----------------
-rm(treat, treat_clin, treat_path)
+rm(treat, treat_clin, treat_path, taq_data)

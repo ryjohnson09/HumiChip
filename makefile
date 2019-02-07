@@ -53,11 +53,13 @@ data/processed/Taq_tidy.csv : data/raw/Taqman_results.xlsx\
 #               data/raw/TrEAT_Merge_DataDictionary_2018.06.27.XLSX
 #               data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx
 #               code/Create_Clin_Metadata.R
+#		data/processed/Taq_tidy.csv
 # Produces:     data/processed/TrEAT_Clinical_Metadata_tidy.csv
 data/processed/TrEAT_Clinical_Metadata_tidy.csv : data/processed/Merged_humichip.tsv\
                                                   data/raw/TrEAT_Merge_ESBL_2018.09.13_v2.XLSX\
                                                   data/raw/TrEAT_Merge_DataDictionary_2018.06.27.XLSX\
                                                   data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
+						  data/processed/Taq_tidy.csv\
                                                   code/Create_Clin_Metadata.R
 	R -e "source('code/Create_Clin_Metadata.R', echo=T)"
 

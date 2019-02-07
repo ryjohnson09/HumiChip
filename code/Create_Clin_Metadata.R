@@ -740,12 +740,16 @@ treat_full <- treat_clin %>%
 
 ## Add Country ------------------------------------------------------
 treat_full <- treat_full %>%
-  mutate(country = ifelse(str_detect(STUDY_ID, "^48"), "Country-1", 
-                   ifelse(str_detect(STUDY_ID, "^61"), "Country-2",
-                   ifelse(str_detect(STUDY_ID, "^87"), "Country-3", "Other"))))
+  mutate(country = ifelse(str_detect(STUDY_ID, "^48"), "Kenya", 
+                   ifelse(str_detect(STUDY_ID, "^61"), "Honduras",
+                   ifelse(str_detect(STUDY_ID, "^87"), "Djibouti", "Other"))))
 
 ## Add in Taq ESBL data ------------------------------------------
 taq_data <- read_csv("data/processed/Taq_tidy.csv")
+
+# filter taq for just "either" data
+taq_data <- taq_data %>%
+  select(study_id, contains("either"))
 treat_full <- treat_full %>%
   left_join(., taq_data, by = c("STUDY_ID" = "study_id"))
 

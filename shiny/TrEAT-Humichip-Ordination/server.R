@@ -355,6 +355,8 @@ shinyServer(function(input, output){
       full_join(., ID_v_c_t_d_p_e(), by = "glomics_ID") %>%
       # Add in pathogen list from treat_pathogen()
       left_join(., treat_pathogens(), by = c("study_id" = "STUDY_ID")) %>%
+      # Add in ESBL list from treat_esbl()
+      left_join(., treat_esbls(), by = c("study_id" = "STUDY_ID")) %>% 
       # Add in remaining treat metadata
       left_join(., treat, by = c("study_id" = "STUDY_ID")) %>%
       
@@ -496,6 +498,6 @@ shinyServer(function(input, output){
     
 
   ## Show Table ----------------------------------------------------
-  output$humi_table <- renderTable({treat_esbls()})
+  output$humi_table <- renderTable({humi_ordination_metadata()})
   
 })

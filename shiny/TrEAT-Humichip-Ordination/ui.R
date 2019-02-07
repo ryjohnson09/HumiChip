@@ -141,7 +141,15 @@ shinyUI(fluidPage(
                     "Impact on Activity" = "Impact_of_illness_on_activity_level",
                     "Past 8 hours diarrhea severity" = "LLS_severity",
                     "ESBL Visit 1" = "ESBL_V1",
-                    "ESBL Visit 5" = "ESBL_V5"), 
+                    "ESBL Visit 5" = "ESBL_V5",
+                    "TEM_V1" = "TEM_either_V1",
+                    "TEM_V5" = "TEM_either_V5",
+                    "CTX_V1" = "CTX_either_V1",
+                    "CTX_V5" = "CTX_either_V5",
+                    "CMY_V1" = "CMY_either_V1",
+                    "CMY_V5" = "CMY_either_V5",
+                    "SHV_V1" = "SHV_either_V1",
+                    "SHV_V5" = "SHV_either_V5"),
                     selected = "Treatment"),
                   
                   ######################

@@ -34,8 +34,8 @@ shinyUI(fluidPage(
                   ### Country of Origin ##
                   ########################
                   checkboxGroupInput('country', 'Country:', 
-                                     choices = c("Country-1", "Country-2", "Country-3"), 
-                                     selected = c("Country-1", "Country-2", "Country-3"), inline = TRUE),
+                                     choices = c("Kenya", "Honduras", "Djibouti"), 
+                                     selected = c("Kenya", "Honduras", "Djibouti"), inline = TRUE),
                   
                   ########################
                   ### Treatment Groups ###
@@ -68,7 +68,26 @@ shinyUI(fluidPage(
                                      choices = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus"),
                                      selected = c("EAEC", "ETEC", "EPEC", "Shigella", "Norovirus"),
                                      inline = TRUE),
-                  checkboxInput("allow_coinfections", label = "Allow Coinfections?", value = FALSE)
+                  checkboxInput("allow_coinfections", label = "Allow Coinfections?", value = FALSE),
+                  
+                  ######################
+                  ### ESBL Selection ###
+                  ######################
+                  br(),
+                  h4("ESBL Selection"),
+                  checkboxInput("esbl_select", label = "Select by ESBL?", value = FALSE),
+                  checkboxGroupInput("esbls", label = "Which ESBLs?", choices = list(
+                    "ESBL+ by phenotype, Visit 1" = "ESBL_V1",
+                    "ESBL+ by phenotype, Visit 5" = "ESBL_V5",
+                    "CMY, Visit 1" = "CMY_either_V1",
+                    "CMY, Visit 5" = "CMY_either_V5",
+                    "CTX, Visit 1" = "CTX_either_V1",
+                    "CTX, Visit 5" = "CTX_either_V5",
+                    "SHV, Visit 1" = "SHV_either_V1",
+                    "SHV, Visit 5" = "SHV_either_V5",
+                    "TEM, Visit 1" = "TEM_either_V1",
+                    "TEM, Visit 5" = "TEM_either_V5")
+                    , selected = "ESBL_V1") 
   )),
   
   # Probe Selection

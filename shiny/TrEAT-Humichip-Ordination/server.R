@@ -297,7 +297,7 @@ shinyServer(function(input, output){
       # Perform PCA analysis using vegan
       if(input$ordination == "PCA"){
         incProgress(amount = 1/2, detail = "PCA analysis")
-        humi_PCA <- vegan::rda(t(humi_matrix()))
+        vegan::rda(t(humi_matrix()))
       # Perform PCoA analysis using ape 
       } else if (input$ordination == "PCoA"){
         incProgress(amount = 1/3, detail = "Calculating distance matrix")

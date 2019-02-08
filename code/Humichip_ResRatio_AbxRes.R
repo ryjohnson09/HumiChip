@@ -1,11 +1,11 @@
 ######################################################################
-# Name: Humichip_ResRatio.R
+# Name: Humichip_ResRatio_AbxRes.R
 # Author: Ryan Johnson
 # Date Created: 7 February 2019
 # Purpose: Determine which genes categories are significantly altered
 #          from visit 1 to visit 4/5 by calculating
 #          response ratios with 95% CI using relative
-#          abundance.
+#          abundance. Looking at antibiotic resistance probes
 ######################################################################
 
 library(tidyverse)
@@ -55,34 +55,41 @@ humi_relabun <- humichip_filtered %>%
 
 rm(humichip_filtered)
 
+
+## Select probes associated with antibioic resistance/drug resistance
+humi_abx <- humi_relabun %>% 
+  filter(subcategory1 == "ANTIBIOTIC_RESISTANCE")
+
+rm(humi_relabun)
+
 ## Summarize Data ----------------------------------------------------------------------------------
-humi_grouped <- humi_relabun %>%
+humi_grouped <- humi_abx %>%
   # Select grouping column of interest and remove rest
-  select(geneCategory, starts_with("X")) %>%
+  select(gene, starts_with("X")) %>%
   # Make long
-  gather(key = glomics_ID, value = rel_abun_value, -geneCategory) %>%
+  gather(key = glomics_ID, value = rel_abun_value, -gene) %>%
   # Group by category of interest
-  group_by(glomics_ID, geneCategory) %>%
+  group_by(glomics_ID, gene) %>%
   # Calculate total relative abundance for each category
   summarise(category_abundance = sum(rel_abun_value)) %>%
   # Add in metadata
   left_join(., treat_filter, by = "glomics_ID") %>% 
   ungroup()
-  
-rm(humi_relabun)
+
+rm(humi_abx)
 
 ## Calculate Response Ratio ------------------------------------------------------------------------
 
 humi_RR <- humi_grouped %>% 
-  # Group by category and visit and country
-  group_by(geneCategory, visit_number, country) %>% 
+  # Group by category and visit and treatment
+  group_by(gene, visit_number, Treatment) %>% 
   summarise(mean_signal = mean(category_abundance),
             sd_signal = sd(category_abundance),
             n = sum(!is.na(category_abundance))) %>% 
   
-  # Spread the signal mean by visit number and country
+  # Spread the signal mean by visit number and treatment
   ungroup() %>%
-  group_by(geneCategory, country) %>%
+  group_by(gene, Treatment) %>%
   spread(visit_number, mean_signal) %>% 
   
   # Rename mean columns
@@ -98,7 +105,7 @@ humi_RR <- humi_grouped %>%
   
   # Compress NAs
   ungroup() %>%
-  group_by(geneCategory, country) %>%
+  group_by(gene, Treatment) %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
@@ -122,7 +129,7 @@ humi_RR <- humi_grouped %>%
   mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
   
   # Make labels pretty
-  mutate(pretty_cat = str_to_title(geneCategory)) %>%
+  mutate(pretty_cat = str_to_title(gene)) %>%
   mutate(pretty_cat = str_replace_all(pretty_cat, "_"," ")) %>%
   
   # Factor columns
@@ -141,13 +148,13 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
   
   # points and error bar
-  geom_point(aes(x = pretty_cat, y = RR, color = country), 
+  geom_point(aes(x = pretty_cat, y = RR, color = Treatment), 
              size = 4,
              position = position_dodge(width = 0.4)) +
   geom_errorbar(aes(ymin = RR - CI95, 
                     ymax = RR + CI95, 
                     x = pretty_cat,
-                    color = country),
+                    color = Treatment),
                 width = 0.25,
                 position = position_dodge(width = 0.4)) +
   
@@ -176,5 +183,5 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Humi_geneCat_country.png", height = 12, width = 7)
+ggsave(plot = RR_plot, filename = "results/figures/Humi_AbxGene_tx.png", height = 10, width = 7)
 

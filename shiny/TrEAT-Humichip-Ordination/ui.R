@@ -142,6 +142,7 @@ shinyUI(fluidPage(
                     "Past 8 hours diarrhea severity" = "LLS_severity",
                     "ESBL Visit 1" = "ESBL_V1",
                     "ESBL Visit 5" = "ESBL_V5",
+                    "ESBL Either 1 or 5" = "ESBL_either",
                     "TEM_V1" = "TEM_either_V1",
                     "TEM_V5" = "TEM_either_V5",
                     "CTX_V1" = "CTX_either_V1",

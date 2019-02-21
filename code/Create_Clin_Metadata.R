@@ -218,9 +218,8 @@ treat_clin <- treat_clin %>%
     ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation >= 5, "severe", NA)))) %>% 
   
   mutate(ESBL_either =
-           ifelse(ESBL_V1 == "Positive" | ESBL_V5 == "Positive", "Positive", 
-           ifelse(is.na(ESBL_V1) & ESBL_V5 == "Negative", NA,
-           ifelse(ESBL_V1 == "Negative" & is.na(ESBL_V5), NA, NA))))
+           ifelse(ESBL_V1 == "Positive" | ESBL_V5 == "Positive", "Positive",
+           ifelse(ESBL_V1 == "Negative" & ESBL_V5 == "Negative", "Negative", NA)))
          
 
 ##########################

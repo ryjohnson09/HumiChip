@@ -266,7 +266,7 @@ shinyServer(function(input, output){
   ## Filter patients from Humichip Data --------------------------------------
   humi_probes_patient_filtered <- eventReactive(input$action, {
     humi_probes_filtered() %>%
-      select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
+      select_if(colnames(.) %in% c("Genbank_UniqueID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
                                    "subcategory2", ID_v_c_t_d_p()$glomics_ID))
   })

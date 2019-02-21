@@ -78,9 +78,14 @@ ensure_no_dups <- sum(duplicated(humichip_data$Genbank_UniqueID) +
                         duplicated(humichip_data$Genbank_UniqueID, fromLast = TRUE))
 
 # Stop execution if duplicates found
-if(bla != 0){
+if(ensure_no_dups != 0){
   stop("Non unique probe identifiers!")
 }
+
+
+
+
+
 
 
 # Remove any extraneous text at end of sample headers

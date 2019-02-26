@@ -495,6 +495,44 @@ shinyServer(function(input, output){
     content = function(file){
       ggsave(file, plot=plotInput(), width = 10, height = 9)
     })
+  
+  
+  
+  
+  ## Perform Statistics ----------------------------------------------
+  
+  stats_groups <- reactive({
+    paste("Groupings:", paste(unique(humi_ordination_metadata()$country), collapse = ", "))
+  })
+  
+  adonis_results <- reactive({
+    # Ensure that humi_ordination_metadata$glomics_ID is in the
+    #  same order as colnames(humi_matrix())
+    if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
+      stopApp("Error calculating adonis P-value")
+    } else {
+      
+      # Calculate adonis results
+      adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()$country, 
+                    method = "bray", 
+                    perm = 99)
+      
+      paste("adonis p-value: ", adonis_temp$aov.tab$`Pr(>F)`[1])
+    }
+    
+    
+    
+  })
+  ## Print stats --------------------------------------------------
+  
+  output$stats_groupings <- renderText({
+    stats_groups()
+  })
+  
+  output$adonis_pvalue <- renderText({
+    adonis_results()
+  })
+  
     
 
   ## Show Table ----------------------------------------------------

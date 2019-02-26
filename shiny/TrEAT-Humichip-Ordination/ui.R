@@ -176,5 +176,9 @@ shinyUI(fluidPage(
   mainPanel(
     plotOutput("humi_plot", width = "800px", height = "800px"),
     br(),
+    verbatimTextOutput("stats_groupings"),
+    br(),
+    verbatimTextOutput("adonis_pvalue"),
+    br(),
     fluidRow(column(12,tableOutput("humi_table")))
 ))))

@@ -74,15 +74,15 @@ rm(humi_relabun)
 ## Calculate Response Ratio ------------------------------------------------------------------------
 
 humi_RR <- humi_grouped %>% 
-  # Group by category and visit and country
-  group_by(geneCategory, visit_number, country) %>% 
+  # Group by category and visit and Treatment
+  group_by(geneCategory, visit_number, Treatment) %>% 
   summarise(mean_signal = mean(category_abundance),
             sd_signal = sd(category_abundance),
             n = sum(!is.na(category_abundance))) %>% 
   
-  # Spread the signal mean by visit number and country
+  # Spread the signal mean by visit number and Treatment
   ungroup() %>%
-  group_by(geneCategory, country) %>%
+  group_by(geneCategory, Treatment) %>%
   spread(visit_number, mean_signal) %>% 
   
   # Rename mean columns
@@ -98,7 +98,7 @@ humi_RR <- humi_grouped %>%
   
   # Compress NAs
   ungroup() %>%
-  group_by(geneCategory, country) %>%
+  group_by(geneCategory, Treatment) %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
@@ -141,13 +141,13 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
   
   # points and error bar
-  geom_point(aes(x = pretty_cat, y = RR, color = country), 
+  geom_point(aes(x = pretty_cat, y = RR, color = Treatment), 
              size = 4,
              position = position_dodge(width = 0.4)) +
   geom_errorbar(aes(ymin = RR - CI95, 
                     ymax = RR + CI95, 
                     x = pretty_cat,
-                    color = country),
+                    color = Treatment),
                 width = 0.25,
                 position = position_dodge(width = 0.4)) +
   
@@ -176,5 +176,5 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Humi_geneCat_country.png", height = 12, width = 7)
+ggsave(plot = RR_plot, filename = "results/figures/Humi_geneCat_Treatment.png", height = 12, width = 7)
 

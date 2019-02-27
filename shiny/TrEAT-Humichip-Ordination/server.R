@@ -513,16 +513,35 @@ shinyServer(function(input, output){
     } else {
       
       # Calculate adonis results
-      adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()$country, 
-                    method = "bray", 
-                    perm = 99)
+      withProgress(message = "Performing adonis test: ", {
+        adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()$country, 
+                      method = "bray", 
+                      perm = 99)
+      })
       
       paste("adonis p-value: ", adonis_temp$aov.tab$`Pr(>F)`[1])
     }
-    
-    
-    
   })
+  
+  
+  mrpp_results <- reactive({
+    # Ensure that humi_ordination_metadata$glomics_ID is in the
+    #  same order as colnames(humi_matrix())
+    if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
+      stopApp("Error calculating mrpp P-value")
+    } else {
+      
+      # Calculate mrpp results
+      withProgress(message = "Performing mrpp test: ", {
+      mrpp_temp <-  vegan::mrpp(t(humi_matrix()), 
+                                humi_ordination_metadata()$country)
+      })
+                                    
+      paste("mrpp p-value: ", mrpp_temp$Pvalue)
+    }
+  })
+  
+  
   ## Print stats --------------------------------------------------
   
   output$stats_groupings <- renderText({
@@ -531,6 +550,10 @@ shinyServer(function(input, output){
   
   output$adonis_pvalue <- renderText({
     adonis_results()
+  })
+  
+  output$mrpp_pvalue <- renderText({
+    mrpp_results()
   })
   
     

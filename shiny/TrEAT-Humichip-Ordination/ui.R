@@ -180,5 +180,7 @@ shinyUI(fluidPage(
     br(),
     verbatimTextOutput("adonis_pvalue"),
     br(),
+    verbatimTextOutput("mrpp_pvalue"),
+    br(),
     fluidRow(column(12,tableOutput("humi_table")))
 ))))

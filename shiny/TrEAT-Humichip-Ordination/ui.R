@@ -157,7 +157,13 @@ shinyUI(fluidPage(
                   ### Connect Points ###
                   ######################
                   radioButtons("lines", "Connect points by study ID?", 
-                               choices = c("Yes", "No"), selected = "No")
+                               choices = c("Yes", "No"), selected = "No"),
+                  
+                  #####################
+                  ### Perform Stats ###
+                  #####################
+                  checkboxInput("stat_calc", "Perform adonis & mrpp tests on colored groups?", 
+                                value = FALSE)
   )),
                   
                   

@@ -502,7 +502,9 @@ shinyServer(function(input, output){
   ## Perform Statistics ----------------------------------------------
   
   stats_groups <- reactive({
-    paste("Groupings:", paste(unique(humi_ordination_metadata()$country), collapse = ", "))
+    if (input$stat_calc){
+    paste("Groupings:", paste(unique(humi_ordination_metadata()[[input$point_color]]), collapse = ", "))
+    } 
   })
   
   adonis_results <- reactive({
@@ -510,17 +512,19 @@ shinyServer(function(input, output){
     #  same order as colnames(humi_matrix())
     if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
       stopApp("Error calculating adonis P-value")
-    } else {
+    }
+    
+    if (input$stat_calc){
       
       # Calculate adonis results
-      withProgress(message = "Performing adonis test: ", {
-        adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()$country, 
+      withProgress(message = "Performing adonis test: ", value = 0.33, {
+        adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()[[input$point_color]], 
                       method = "bray", 
                       perm = 99)
       })
       
       paste("adonis p-value: ", adonis_temp$aov.tab$`Pr(>F)`[1])
-    }
+    } 
   })
   
   
@@ -529,16 +533,18 @@ shinyServer(function(input, output){
     #  same order as colnames(humi_matrix())
     if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
       stopApp("Error calculating mrpp P-value")
-    } else {
+    } 
+    
+    if (input$stat_calc){
       
       # Calculate mrpp results
-      withProgress(message = "Performing mrpp test: ", {
+      withProgress(message = "Performing mrpp test: ", value = 0.66, {
       mrpp_temp <-  vegan::mrpp(t(humi_matrix()), 
-                                humi_ordination_metadata()$country)
+                                humi_ordination_metadata()[[input$point_color]])
       })
                                     
       paste("mrpp p-value: ", mrpp_temp$Pvalue)
-    }
+    } 
   })
   
   

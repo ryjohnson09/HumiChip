@@ -501,16 +501,28 @@ shinyServer(function(input, output){
   
   ## Perform Statistics ----------------------------------------------
   
+  # Remove samples for which the groupings are NA values
+  new_ord_meta <- reactive({
+    humi_ordination_metadata() %>% 
+      filter(!is.na(!!sym(input$point_color)))
+  })
+  
+  new_matrix <- reactive({
+    humi_matrix()[ ,colnames(humi_matrix()) %in% new_ord_meta()$glomics_ID]
+  })
+  
+  
+  # Display the groupings
   stats_groups <- reactive({
     if (input$stat_calc){
-    paste("Groupings:", paste(unique(humi_ordination_metadata()[[input$point_color]]), collapse = ", "))
+      paste("Groupings:", paste(unique(new_ord_meta()[[input$point_color]]), collapse = ", "))
     } 
   })
   
   adonis_results <- reactive({
-    # Ensure that humi_ordination_metadata$glomics_ID is in the
-    #  same order as colnames(humi_matrix())
-    if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
+    # Ensure that new_ord_meta()$glomics_ID is in the
+    #  same order as colnames(new_matrix())
+    if (!all(new_ord_meta()$glomics_ID == colnames(new_matrix()))){
       stopApp("Error calculating adonis P-value")
     }
     
@@ -518,9 +530,9 @@ shinyServer(function(input, output){
       
       # Calculate adonis results
       withProgress(message = "Performing adonis test: ", value = 0.33, {
-        adonis_temp <-  vegan::adonis(t(humi_matrix()) ~ humi_ordination_metadata()[[input$point_color]], 
-                      method = "bray", 
-                      perm = 99)
+        adonis_temp <-  vegan::adonis(t(new_matrix()) ~ new_ord_meta()[[input$point_color]], 
+                                      method = "bray", 
+                                      perm = 99)
       })
       
       paste("adonis p-value: ", adonis_temp$aov.tab$`Pr(>F)`[1])
@@ -529,9 +541,9 @@ shinyServer(function(input, output){
   
   
   mrpp_results <- reactive({
-    # Ensure that humi_ordination_metadata$glomics_ID is in the
-    #  same order as colnames(humi_matrix())
-    if (!all(humi_ordination_metadata()$glomics_ID == colnames(humi_matrix()))){
+    # Ensure that new_ord_meta()$glomics_ID is in the
+    #  same order as colnames(new_matrix())
+    if (!all(new_ord_meta()$glomics_ID == colnames(new_matrix()))){
       stopApp("Error calculating mrpp P-value")
     } 
     
@@ -539,10 +551,10 @@ shinyServer(function(input, output){
       
       # Calculate mrpp results
       withProgress(message = "Performing mrpp test: ", value = 0.66, {
-      mrpp_temp <-  vegan::mrpp(t(humi_matrix()), 
-                                humi_ordination_metadata()[[input$point_color]])
+        mrpp_temp <-  vegan::mrpp(t(new_matrix()), 
+                                  new_ord_meta()[[input$point_color]])
       })
-                                    
+      
       paste("mrpp p-value: ", mrpp_temp$Pvalue)
     } 
   })

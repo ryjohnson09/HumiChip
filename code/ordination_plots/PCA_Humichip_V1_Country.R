@@ -9,7 +9,7 @@
 library(tidyverse)
 library(vegan)
 
-probe_type <- "All"
+probe_type <- "Functional"
 
 
 ## Read in data -----------------------------------------------------------------------------------------

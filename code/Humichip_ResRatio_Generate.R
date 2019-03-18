@@ -1,28 +1,27 @@
 ######################################################################
-# Name: Humichip_ResRatio.R
+# Name: Humichip_ResRatio_Generate.R
 # Author: Ryan Johnson
 # Date Created: 7 February 2019
-# Purpose: Determine which genes categories are significantly altered
-#          from visit 1 to visit 4/5 by calculating
-#          response ratios with 95% CI using relative
-#          abundance.
+# Purpose: Determine which genes categories are significantly altered.
+#   This script is highly ammendable depending on what you are looking
+#   at (i.e. country, visit, category, etc.)
 ######################################################################
 
 library(tidyverse)
 
-countries <- c("Djibouti", "Kenya", "Honduras")
-visit <- c(1,5)
+countries <- c("Djibouti")
+visits <- c(1,5)
 
 ## Load data --------------------------------------------------------------------------------------------
 humichip <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip.tsv")))
 treat <- suppressMessages(suppressWarnings(read_csv("data/processed/TrEAT_Clinical_Metadata_tidy.csv")))
 ID_Decoder <- suppressMessages(suppressWarnings(read_csv("data/processed/ID_Decoder_Humichip.csv")))
 
-# Only include matched isolate for visit 1 and visit 4 or 5
+# Only include matched isolates
 ID_Decoder_matched <- ID_Decoder %>%
-  filter(visit_number %in% visit) %>%
+  filter(visit_number %in% visits) %>%
   group_by(study_id) %>% 
-  filter(n() == length(visit)) 
+  filter(n() == length(visits)) 
 
 rm(ID_Decoder)
 
@@ -49,9 +48,9 @@ rm(humichip)
 
 ## Convert the Humichip data to relative abundance -------------------------------------------------
 humi_relabun <- humichip_filtered %>%
-  # only consider probes with a gene category designation (remove STR_SPE probes)
+  # only consider probes with a gene category designation (removes STR_SPE probes)
   filter(!is.na(geneCategory)) %>%
-  # Convert all values to 0 and 1 (or .)
+  # Convert all values to 1 and 0
   mutate_at(vars(starts_with("X")), funs(ifelse(is.na(.), 0, .))) %>% 
   # Convert all values to relative abundance
   mutate_at(vars(starts_with("X")), funs((./sum(.)) * 100))
@@ -61,37 +60,35 @@ rm(humichip_filtered)
 ## Summarize Data ----------------------------------------------------------------------------------
 humi_grouped <- humi_relabun %>%
   # Select grouping column of interest and remove rest
-  select(subcategory1, starts_with("X")) %>%
+  select(geneCategory, starts_with("X")) %>%
   # Make long
-  gather(key = glomics_ID, value = rel_abun_value, -subcategory1) %>%
+  gather(key = glomics_ID, value = rel_abun_value, -geneCategory) %>%
   # Group by category of interest
-  group_by(glomics_ID, subcategory1) %>%
+  group_by(glomics_ID, geneCategory) %>%
   # Calculate total relative abundance for each category
   summarise(category_abundance = sum(rel_abun_value)) %>%
   # Add in metadata
   left_join(., treat_filter, by = "glomics_ID") %>% 
   ungroup()
-  
+
 rm(humi_relabun)
+
+## Select only certain countries at a time ------------------------------------------------------------
+humi_grouped <- humi_grouped %>%
+  filter(country %in% countries)
 
 ## Calculate Response Ratio ------------------------------------------------------------------------
 
-# Filter by country if desired
-humi_grouped_country <- humi_grouped %>% 
-  filter(country %in% countries)
-
-
-# Calculate response ratio
-humi_RR <- humi_grouped_country %>% 
+humi_RR <- humi_grouped %>% 
   # Group by category and visit and Treatment
-  group_by(subcategory1, visit_number, Treatment) %>% 
+  group_by(geneCategory, visit_number) %>% 
   summarise(mean_signal = mean(category_abundance),
             sd_signal = sd(category_abundance),
             n = sum(!is.na(category_abundance))) %>% 
   
   # Spread the signal mean by visit number and Treatment
   ungroup() %>%
-  group_by(subcategory1, Treatment) %>%
+  group_by(geneCategory, visit_number) %>%
   spread(visit_number, mean_signal) %>% 
   
   # Rename mean columns
@@ -107,12 +104,12 @@ humi_RR <- humi_grouped_country %>%
   
   # Compress NAs
   ungroup() %>%
-  group_by(subcategory1, Treatment) %>%
+  group_by(geneCategory) %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
-  filter(n_group1 >= 5) %>%
-  filter(n_group2 >= 5) %>%
+  filter(n_group1 >= 10) %>%
+  filter(n_group2 >= 10) %>%
   
   # Calculate SEM for each mean
   mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
@@ -131,19 +128,19 @@ humi_RR <- humi_grouped_country %>%
   mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
   
   # Make labels pretty
-  mutate(pretty_cat = str_to_title(subcategory1)) %>%
+  mutate(pretty_cat = str_to_title(geneCategory)) %>%
   mutate(pretty_cat = str_replace_all(pretty_cat, "_"," ")) %>%
   
   # Factor columns
-  #mutate(pretty_cat = fct_reorder(pretty_cat, RR)) %>%
+  mutate(pretty_cat = fct_reorder(pretty_cat, RR)) %>%
   ungroup()
 
 ## Remove any cateogories where the mean was below threshold ----------------
 humi_RR_filtered <- humi_RR %>% 
   filter(group1_mean > 0.01) %>% 
-  filter(group2_mean > 0.01) %>% 
-  # remove any non-significant comparisons
-  filter(keeper == "Yes")
+  filter(group2_mean > 0.01)
+  # Remove an non-significant categories?
+  #filter(keeper == "Yes")
 
 
 ## Plot ---------------------------------------------------------------------
@@ -152,13 +149,12 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
   
   # points and error bar
-  geom_point(aes(x = pretty_cat, y = RR, color = Treatment), 
+  geom_point(aes(x = pretty_cat, y = RR), 
              size = 4,
              position = position_dodge(width = 0.4)) +
   geom_errorbar(aes(ymin = RR - CI95, 
                     ymax = RR + CI95, 
-                    x = pretty_cat,
-                    color = Treatment),
+                    x = pretty_cat),
                 width = 0.25,
                 position = position_dodge(width = 0.4)) +
   
@@ -187,5 +183,5 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Humi_subcat1_Treatment_v15.png", height = 6, width = 8)
+ggsave(plot = RR_plot, filename = "results/figures/Humi_genecat_V15_country.png", height = 8, width = 8)
 

@@ -49,7 +49,7 @@ humi_relabun <- humichip_filtered %>%
   # only consider probes with a gene category designation
   filter(!is.na(geneCategory)) %>%
   # Convert all values to 1 and 0
-  mutate_at(vars(starts_with("X")), funs(ifelse(is.na(.), 0, 1))) %>% 
+  mutate_at(vars(starts_with("X")), funs(ifelse(is.na(.), 0, .))) %>% 
   # Convert all values to relative abundance
   mutate_at(vars(starts_with("X")), funs((./sum(.)) * 100))
 
@@ -109,8 +109,8 @@ humi_RR <- humi_grouped %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
-  filter(n_group1 >= 10) %>%
-  filter(n_group2 >= 10) %>%
+  filter(n_group1 >= 5) %>%
+  filter(n_group2 >= 5) %>%
   
   # Calculate SEM for each mean
   mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
@@ -183,5 +183,5 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Humi_AbxGene_tx.png", height = 10, width = 7)
+ggsave(plot = RR_plot, filename = "results/figures/Humi_AbxGene_tx.png", height = 8, width = 8)
 

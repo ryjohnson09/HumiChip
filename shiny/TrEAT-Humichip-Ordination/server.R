@@ -266,7 +266,7 @@ shinyServer(function(input, output){
   ## Filter patients from Humichip Data --------------------------------------
   humi_probes_patient_filtered <- eventReactive(input$action, {
     humi_probes_filtered() %>%
-      select_if(colnames(.) %in% c("Genbank_UniqueID", "gene", "species", "lineage",
+      select_at(c("Genbank_UniqueID", "gene", "species", "lineage",
                                    "annotation", "geneCategory", "subcategory1",
                                    "subcategory2", ID_v_c_t_d_p()$glomics_ID))
   })
@@ -279,7 +279,7 @@ shinyServer(function(input, output){
    
     # Set NA's to 0 and values not NA to original value
     humi1 <- humi_probes_patient_filtered() %>%
-      select_if(colnames(.) %in% ID_v_c_t_d_p_e()$glomics_ID) %>%
+      select_at(ID_v_c_t_d_p_e()$glomics_ID) %>%
       mutate_all(funs(ifelse(is.na(.), 0, .)))
     
     # Remove rows that equal 0

@@ -39,9 +39,9 @@ rm(treat)
 
 ## Filter the humichip data to include only samples in treat_filter --------------------------------
 humichip_filtered <- humichip %>% 
-  select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
-                               "annotation", "geneCategory", "subcategory1",
-                               "subcategory2", treat_filter$glomics_ID))
+  select_at(c("Genbank_UniqueID", "gene", "species", "lineage",
+              "annotation", "geneCategory", "subcategory1",
+              "subcategory2", treat_filter$glomics_ID))
 
 rm(humichip)
 

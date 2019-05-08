@@ -24,6 +24,23 @@ data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 	R -e "source('code/Merge_Humichip.R', echo=T)"
 
 
+# Create Dataframe that shows samples array run source
+# Depends on:   data/raw/HumiChip_New/HumiChip-1-LTO.txt
+#               data/raw/HumiChip_New/HumiChip-2-LTO.txt
+#               data/raw/HumiChip_New/HumiChip-3-LTO.txt
+#               data/raw/HumiChip_New/HumiChip-4-LTO.txt
+#               data/raw/HumiChip_New/HumiChip-5-LTO.txt
+#               code/array_run.R
+# Produces:     data/processed/array_runs.csv
+data/processed/array_runs.csv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
+                                data/raw/HumiChip_New/HumiChip-2-LTO.txt\
+                                data/raw/HumiChip_New/HumiChip-3-LTO.txt\
+                                data/raw/HumiChip_New/HumiChip-4-LTO.txt\
+                                data/raw/HumiChip_New/HumiChip-5-LTO.txt\
+                                code/array_run.R
+	R -e "source('code/array_run.R', echo=T)"
+
+
 # Create decoder that links Glomics ID's to TrEAT Subject IDs
 # Depends on:   data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx
 #               code/ID_Decoder_Humichip.R

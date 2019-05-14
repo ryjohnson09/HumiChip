@@ -230,12 +230,12 @@ shinyServer(function(input, output){
   ID_v_c_t_d_p_e <- reactive({
     if (input$esbl_select){
       
-      # Ensure that at least one pathogen is selected
+      # Ensure that at least one esbl is selected
       validate(need(input$esbls, 'Please select at least one ESBL'))
       
       ID_v_c_t_d_p() %>%
         filter(study_id %in% treat_esbls()$STUDY_ID)
-    } else if (!input$pathogen_select){
+    } else if (!input$esbl_select){
       ID_v_c_t_d_p()
     }
   })
@@ -268,37 +268,37 @@ shinyServer(function(input, output){
     humi_probes_filtered() %>%
       select_at(c("Genbank.ID", "Gene", "Organism", "Lineage",
                   "Gene_category", "Subcategory1",
-                  "Subcategory2", ID_v_c_t_d_p()$glomics_ID))
+                  "Subcategory2", ID_v_c_t_d_p_e()$glomics_ID))
   })
   
   
   ## Prepare Data for Ordination Analysis ----------------------------------------
   humi_matrix <- eventReactive(input$action, {
-    
-    validate(need(ncol(humi_probes_patient_filtered()) > 8, "No Patients meet criteria"))
-   
+
+    #validate(need(ncol(humi_probes_patient_filtered()) > 7, "No Patients meet criteria"))
+
     # Set NA's to 0 and values not NA to original value
     humi1 <- humi_probes_patient_filtered() %>%
       select_at(ID_v_c_t_d_p_e()$glomics_ID) %>%
       mutate_all(funs(ifelse(is.na(.), 0, .)))
-    
+
     # Remove rows that equal 0
     humi1 <- humi1[rowSums(humi1) != 0,]
-    
+
     # Return matrix
     as.matrix(humi1)
   })
-  
-  
+
+
   ## Ordination Analysis ----------------------------------------------------------
   humi_ordination_results <- eventReactive(input$action, {
     withProgress(message = "Performing Ordination: ", {
-      
+
       # Perform PCA analysis using vegan
       if(input$ordination == "PCA"){
         incProgress(amount = 1/2, detail = "PCA analysis")
         vegan::rda(t(humi_matrix()))
-      # Perform PCoA analysis using ape 
+      # Perform PCoA analysis using ape
       } else if (input$ordination == "PCoA"){
         incProgress(amount = 1/3, detail = "Calculating distance matrix")
         humichip_dist <- vegan::vegdist(as.matrix(t(humi_matrix())))
@@ -313,12 +313,12 @@ shinyServer(function(input, output){
       }
     })
   })
-  
-  
-  
+
+
+
   # Extract coordinates as tibble
   humi_coordinates <- eventReactive(input$action, {
-    
+
     # PCA or DCA
     if (input$ordination == "PCA" | input$ordination == "DCA"){
       as.data.frame(scores(humi_ordination_results(), display = "sites")) %>%
@@ -331,9 +331,9 @@ shinyServer(function(input, output){
       stopApp("Error in extracting ordination coordinates")
     }
   })
-    
-  
-  
+
+
+
   # Get Proportion explained
   ord_prop_expl <- eventReactive(input$action, {
     if (input$ordination == "PCA"){
@@ -345,9 +345,9 @@ shinyServer(function(input, output){
     }
   })
 
-  
-  
-  
+
+
+
   ## Merge Ordination Analysis with Metadata --------------------------------------
   humi_ordination_metadata <- eventReactive(input$action, {
     humi_coordinates() %>%
@@ -356,19 +356,19 @@ shinyServer(function(input, output){
       # Add in pathogen list from treat_pathogen()
       left_join(., treat_pathogens(), by = c("study_id" = "STUDY_ID")) %>%
       # Add in ESBL list from treat_esbl()
-      left_join(., treat_esbls(), by = c("study_id" = "STUDY_ID")) %>% 
+      left_join(., treat_esbls(), by = c("study_id" = "STUDY_ID")) %>%
       # Add in remaining treat metadata
       left_join(., treat, by = c("study_id" = "STUDY_ID")) %>%
-      
+
       # Factor Columns
       mutate(visit_number = factor(visit_number)) %>%
       mutate(Impact_of_illness_on_activity_level = factor(Impact_of_illness_on_activity_level))
   })
-    
-  
-  
-  
-    
+
+
+
+
+
   ## Plot --------------------------------------------------------------
   # Aesthetic sizes
   axis_title_size <- 18
@@ -376,13 +376,13 @@ shinyServer(function(input, output){
   title_size <- 20
   legend_text_size <- 13
   point_size <- 4
-  
+
   # Fill
   my_fill <- reactive({
     ifelse(input$point_color == "None", "NULL", input$point_color)
   })
-  
-  
+
+
   # Set up Base Plot
   humi_ord_base_plot <- reactive({
 
@@ -398,18 +398,18 @@ shinyServer(function(input, output){
         legend.title = element_blank()) +
       guides(fill = guide_legend(override.aes = list(size=7)))
   })
-  
+
   # eventReactive to chose plot type
   plot_type <- eventReactive(input$action, {
     ifelse(input$ordination == "PCA", "PCA",
            ifelse(input$ordination == "DCA", "DCA", "PCoA"))
   })
 
-  
+
 
   plotInput <- reactive({
-    
-    
+
+
     ################
     ### PCA PLOT ###
     ################
@@ -422,17 +422,17 @@ shinyServer(function(input, output){
         geom_point(aes_string(x = "PC1", y = "PC2", color = my_fill()),
                    pch = 19, alpha = 0.8, size = point_size) +
         ggtitle("PCA Analysis")
-      
+
       # Connect lines?
       if (input$lines == "Yes"){
-        humi_ord_plot <- humi_ord_plot + 
+        humi_ord_plot <- humi_ord_plot +
           geom_line(aes_string(x = "PC1", y = "PC2", group = "study_id"), linetype = 1, color = "black", size = 0.8)
       } else {
         humi_ord_plot <- humi_ord_plot
       }
       # Plot
       ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
-    
+
     #################
     ### PCoA PLOT ###
     #################
@@ -445,17 +445,17 @@ shinyServer(function(input, output){
         geom_point(aes_string(x = "Axis.1", y = "Axis.2", color = my_fill()),
                    pch = 19, alpha = 0.8, size = point_size) +
         ggtitle("PCoA Analysis")
-      
+
       # Connect lines?
       if (input$lines == "Yes"){
-        humi_ord_plot <- humi_ord_plot + 
+        humi_ord_plot <- humi_ord_plot +
           geom_line(aes_string(x = "Axis.1", y = "Axis.2", group = "study_id"), linetype = 1, color = "black", size = 0.8)
       } else {
         humi_ord_plot <- humi_ord_plot
       }
       # Plot
       ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
-      
+
     ################
     ### DCA PLOT ###
     ################
@@ -468,108 +468,108 @@ shinyServer(function(input, output){
         geom_point(aes_string(x = "DCA1", y = "DCA2", color = my_fill()),
                    pch = 19, alpha = 0.8, size = point_size) +
         ggtitle("DCA Analysis")
-      
+
       # Connect lines?
       if (input$lines == "Yes"){
-        humi_ord_plot <- humi_ord_plot + 
+        humi_ord_plot <- humi_ord_plot +
           geom_line(aes_string(x = "DCA1", y = "DCA2", group = "study_id"), linetype = 1, color = "black", size = 0.8)
       } else {
         humi_ord_plot <- humi_ord_plot
       }
       # Plot
       ggMarginal(humi_ord_plot, groupColour = TRUE, groupFill = TRUE)
-    
-    } else {stopApp("Error generating plot")} 
+
+    } else {stopApp("Error generating plot")}
   })
-  
-  
+
+
 
   ## Display Plot ---------------------------------------------------
   output$humi_plot <- renderPlot({
     print(plotInput())
   })
-  
+
   ## Download plot --------------------------------------------------
   output$downloadPlot <- downloadHandler(
     filename = function(){paste("shiny_plot",'.png',sep='')},
     content = function(file){
       ggsave(file, plot=plotInput(), width = 10, height = 9)
     })
-  
-  
-  
-  
+
+
+
+
   ## Perform Statistics ----------------------------------------------
-  
+
   # Remove samples for which the groupings are NA values
   new_ord_meta <- reactive({
-    humi_ordination_metadata() %>% 
+    humi_ordination_metadata() %>%
       filter(!is.na(!!sym(input$point_color)))
   })
-  
+
   new_matrix <- reactive({
     humi_matrix()[ ,colnames(humi_matrix()) %in% new_ord_meta()$glomics_ID]
   })
-  
-  
+
+
   # Display the groupings
   stats_groups <- reactive({
     if (input$stat_calc){
       paste("Groupings:", paste(unique(new_ord_meta()[[input$point_color]]), collapse = ", "))
-    } 
+    }
   })
-  
+
   adonis_results <- reactive({
     # Ensure that new_ord_meta()$glomics_ID is in the
     #  same order as colnames(new_matrix())
     if (!all(new_ord_meta()$glomics_ID == colnames(new_matrix()))){
       stopApp("Error calculating adonis P-value")
     }
-    
+
     if (input$stat_calc){
-      
+
       # Calculate adonis results
       withProgress(message = "Performing adonis test: ", value = 0.33, {
-        adonis_temp <-  vegan::adonis(t(new_matrix()) ~ new_ord_meta()[[input$point_color]], 
-                                      method = "bray", 
+        adonis_temp <-  vegan::adonis(t(new_matrix()) ~ new_ord_meta()[[input$point_color]],
+                                      method = "bray",
                                       perm = 99)
       })
-      
+
       paste("adonis p-value: ", adonis_temp$aov.tab$`Pr(>F)`[1])
-    } 
+    }
   })
-  
-  
+
+
   mrpp_results <- reactive({
     # Ensure that new_ord_meta()$glomics_ID is in the
     #  same order as colnames(new_matrix())
     if (!all(new_ord_meta()$glomics_ID == colnames(new_matrix()))){
       stopApp("Error calculating mrpp P-value")
-    } 
-    
+    }
+
     if (input$stat_calc){
-      
+
       # Calculate mrpp results
       withProgress(message = "Performing mrpp test: ", value = 0.66, {
-        mrpp_temp <-  vegan::mrpp(t(new_matrix()), 
+        mrpp_temp <-  vegan::mrpp(t(new_matrix()),
                                   new_ord_meta()[[input$point_color]])
       })
-      
+
       paste("mrpp p-value: ", mrpp_temp$Pvalue)
-    } 
+    }
   })
-  
-  
+
+
   ## Print stats --------------------------------------------------
-  
+
   output$stats_groupings <- renderText({
     stats_groups()
   })
-  
+
   output$adonis_pvalue <- renderText({
     adonis_results()
   })
-  
+
   output$mrpp_pvalue <- renderText({
     mrpp_results()
   })

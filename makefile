@@ -7,7 +7,7 @@ list:
 
 
 
-# Merge all of the Humichip datasets into one
+# Merge all of the Humichip datasets into one (OLD NON-NORMALIZED DATA)
 # Depends on:	data/raw/HumiChip_New/HumiChip-1-LTO.txt
 #		data/raw/HumiChip_New/HumiChip-2-LTO.txt
 #		data/raw/HumiChip_New/HumiChip-3-LTO.txt
@@ -22,6 +22,17 @@ data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 		                     data/raw/HumiChip_New/HumiChip-5-LTO.txt\
   		           	     code/Merge_Humichip.R
 	R -e "source('code/Merge_Humichip.R', echo=T)"
+
+
+
+# Clean up the new normalized Humichip dataset
+# Depends on:	data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt
+#		code/Merge_Humichip_ReNormalized.R
+# Produces:	data/processed/Merged_humichip_Renormalized.tsv
+data/processed/Merged_humichip_Renormalized.tsv : data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt\
+						  code/Merge_Humichip_ReNormalized.R
+	R -e "source('code/Merge_Humichip_ReNormalized.R', echo=T)"
+
 
 
 # Create Dataframe that shows samples array run source

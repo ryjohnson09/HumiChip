@@ -20,7 +20,7 @@ shinyServer(function(input, output){
                
                # Humichip
                incProgress(amount = 1/3, detail = "Reading Humichip Data")
-               humichip <- suppressWarnings(suppressMessages(read_tsv("Merged_humichip.tsv")))
+               humichip <- suppressWarnings(suppressMessages(read_tsv("Merged_humichip_Renormalized.tsv")))
                
                
                # Treat
@@ -249,13 +249,13 @@ shinyServer(function(input, output){
     
     if(input$probe_type == "Functional"){
       # Ensure that at least one functional group is selected
-      validate(need(input$geneCategory, 'Please select at least one Functional Group'))
+      validate(need(input$Gene_category, 'Please select at least one Functional Group'))
       
       humichip %>%
-        filter(geneCategory %in% input$geneCategory)
+        filter(Gene_category %in% input$Gene_category)
     } else if (input$probe_type == "Strain/Species"){
       humichip %>%
-        filter(gene == "STR_SPE")
+        filter(Gene == "STR_SPE")
     } else if (input$probe_type == "All"){
       humichip
     }
@@ -266,9 +266,9 @@ shinyServer(function(input, output){
   ## Filter patients from Humichip Data --------------------------------------
   humi_probes_patient_filtered <- eventReactive(input$action, {
     humi_probes_filtered() %>%
-      select_at(c("Genbank_UniqueID", "gene", "species", "lineage",
-                                   "annotation", "geneCategory", "subcategory1",
-                                   "subcategory2", ID_v_c_t_d_p()$glomics_ID))
+      select_at(c("Genbank.ID", "Gene", "Organism", "Lineage",
+                  "Gene_category", "Subcategory1",
+                  "Subcategory2", ID_v_c_t_d_p()$glomics_ID))
   })
   
   

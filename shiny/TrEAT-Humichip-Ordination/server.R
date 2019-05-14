@@ -154,7 +154,7 @@ shinyServer(function(input, output){
       select(STUDY_ID, paste(input$pathogens, input$detection_method, sep = "_")) %>%
       # Replace yes no with Pathogen
       mutate_at(vars(matches(input$detection_method)),
-                funs(ifelse(. == "yes", gsub(x = deparse(substitute(.)), pattern = "_.*$", replacement = ""), ""))) %>%
+                list(~ifelse(. == "yes", gsub(x = deparse(substitute(.)), pattern = "_.*$", replacement = ""), ""))) %>%
       # If sample has an NA, remove it (wasn't tested)
       mutate(has_na = rowSums(is.na(.))) %>%
       filter(has_na == 0) %>%
@@ -197,11 +197,11 @@ shinyServer(function(input, output){
       # Select columns of interest
       select(STUDY_ID, ESBL_V1, ESBL_V5, ends_with("either_V1"), ends_with("either_V5")) %>%
       # Change ESBL columns to Yes/No
-      mutate_at(vars(starts_with("ESBL")), funs(ifelse(. == "Positive", "Yes",
-                                                ifelse(. == "Negative", "No", NA)))) %>% 
+      mutate_at(vars(starts_with("ESBL")), list(~ifelse(. == "Positive", "Yes",
+                                                 ifelse(. == "Negative", "No", NA)))) %>% 
       # Replace yes no with ESBL
       mutate_at(vars(-STUDY_ID),
-                funs(ifelse(. == "Yes", deparse(substitute(.)), ""))) %>% 
+                list(~ifelse(. == "Yes", deparse(substitute(.)), ""))) %>% 
       # If no ESBLs of interest detected, remove it
       mutate(esbl_present = rowSums(. != "", na.rm = TRUE)) %>%
       filter(esbl_present > 1) %>%
@@ -280,7 +280,7 @@ shinyServer(function(input, output){
     # Set NA's to 0 and values not NA to original value
     humi1 <- humi_probes_patient_filtered() %>%
       select_at(ID_v_c_t_d_p_e()$glomics_ID) %>%
-      mutate_all(funs(ifelse(is.na(.), 0, .)))
+      mutate_all(list(~ifelse(is.na(.), 0, .)))
 
     # Remove rows that equal 0
     humi1 <- humi1[rowSums(humi1) != 0,]

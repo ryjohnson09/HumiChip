@@ -5,6 +5,19 @@
 ## Load Libraries -----------------------------------
 library(shiny)
 
+## Set Variables ------------------------------------
+functional_groups <- c("VIRULENCE", "PURINE_METABOLISM", 
+                       "GLYCAN_BIOSYNTHESIS_AND_METABOLISM", 
+                       "AMINO_ACID_SYNTHESIS", "EXOTIC_METABOLISMS", 
+                       "COFACTOR_BIOSYNTHESIS", "GLYCOSAMINOGLYCAN_DEGRADATION", 
+                       "FEEDER_PATHWAYS_TO_GLYCOLYSIS", 
+                       "CENTRAL_CARBON_METABOLISM_PATHWAYS", "NITROGEN_METABOLISM", 
+                       "GLYCAN_STRUCTURES_-_DEGRADATION", 
+                       "AMINO_ACID_TRANSPORT_AND_METABOLISM", "ORGANIC_ACIDS", 
+                       "PYRIMIDINE_METABOLISM", "ISOPRENOID_BIOSYNTHESIS", 
+                       "COMPLEX_CARBOHYDRATES", "FATTY_ACID_METABOLISM", 
+                       "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
+                       "RESPIRATION", "N-GLYCAN_DEGRADATION")
 
 ## Define UI ----------------------------------------
 shinyUI(fluidPage(
@@ -99,19 +112,8 @@ shinyUI(fluidPage(
                   ##################
                   selectInput('probe_type', 'Probe Type:', choices = c("Functional", "Strain/Species", "All"), 
                               selected = "All"),
-                  checkboxGroupInput("geneCategory", "Gene Category:", 
-                                     choices = c("VIRULENCE", "PURINE_METABOLISM", 
-                                                 "GLYCAN_BIOSYNTHESIS_AND_METABOLISM", 
-                                                 "AMINO_ACID_SYNTHESIS", "EXOTIC_METABOLISMS", 
-                                                 "COFACTOR_BIOSYNTHESIS", "GLYCOSAMINOGLYCAN_DEGRADATION", 
-                                                 "FEEDER_PATHWAYS_TO_GLYCOLYSIS", 
-                                                 "CENTRAL_CARBON_METABOLISM_PATHWAYS", "NITROGEN_METABOLISM", 
-                                                 "GLYCAN_STRUCTURES_-_DEGRADATION", 
-                                                 "AMINO_ACID_TRANSPORT_AND_METABOLISM", "ORGANIC_ACIDS", 
-                                                 "PYRIMIDINE_METABOLISM", "ISOPRENOID_BIOSYNTHESIS", 
-                                                 "COMPLEX_CARBOHYDRATES", "FATTY_ACID_METABOLISM", 
-                                                 "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
-                                                 "RESPIRATION", "N-GLYCAN_DEGRADATION"))
+                  checkboxGroupInput("Gene_category", "Gene Category:", selected = functional_groups,
+                                     choices = functional_groups)
   )),
   
   # Ordination Type

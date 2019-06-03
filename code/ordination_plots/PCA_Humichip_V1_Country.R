@@ -13,7 +13,7 @@ probe_type <- "Functional"
 
 
 ## Read in data -----------------------------------------------------------------------------------------
-humichip <- suppressWarnings(suppressMessages(read_tsv("data/processed/Merged_humichip.tsv")))
+humichip <- suppressWarnings(suppressMessages(read_tsv("data/processed/Merged_humichip_Renormalized.tsv")))
 treat <- suppressWarnings(suppressMessages(read_csv("data/processed/TrEAT_Clinical_Metadata_tidy.csv")))
 ID_Decoder <- suppressWarnings(suppressMessages(read_csv("data/processed/ID_Decoder_Humichip.csv")))
 
@@ -40,19 +40,18 @@ rm(treat)
 
 ## Filter the humichip data to include only samples in treat_filter --------------------------------
 humichip_filtered <- humichip %>% 
-  select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
-                               "annotation", "geneCategory", "subcategory1",
-                               "subcategory2", treat_filter$glomics_ID))
+  select_at(c("Genbank.ID", "Gene", "Organism", "Lineage",
+              "Gene_category", "Subcategory1", "Subcategory2", treat_filter$glomics_ID))
 
 rm(humichip)
 
 ## Probe Filtering ---------------------------------------------------------
 if(probe_type == "Functional"){
   humi_probes_filtered <- humichip_filtered %>%
-    filter(gene != "STR_SPE")
+    filter(Gene != "STR_SPE")
 } else if (probe_type == "Strain/Species"){
   humi_probes_filtered <- humichip_filtered %>%
-    filter(gene == "STR_SPE")
+    filter(Gene == "STR_SPE")
 } else if (probe_type == "All"){
   humi_probes_filtered <- humichip_filtered
 } else {
@@ -65,7 +64,7 @@ humi_matrix <- humi_probes_filtered %>%
   
   # Set NA's to 0 and values not NA to original value
   select(starts_with("X")) %>%
-  mutate_all(funs(ifelse(is.na(.), 0, .)))
+  mutate_all(list(~ifelse(is.na(.), 0, .)))
   
 # Remove rows that equal 0
 humi_matrix <- humi_matrix[rowSums(humi_matrix) != 0,]
@@ -131,9 +130,10 @@ humi_PCA_plot <- humi_PCA_base +
   ylab(paste0("PC2(", round(ord_prop_expl[[2]], 2), "%)")) +
   geom_point(aes(x = PC1, 
                  y = PC2, 
-                 color = country),
+                 color = TEM_either_V1),
              alpha = 1, size = point_size, fill = "black") +
-  stat_ellipse(aes(x = PC1, y = PC2, color = country), level = 0.75, size = 1.5, linetype = "dashed") +
+  scale_color_discrete(labels = c("Negative", "Postive")) +
+  stat_ellipse(aes(x = PC1, y = PC2, color = TEM_either_V1), level = 0.75, size = 1.5, linetype = "dashed") +
   ggtitle("PCA Analysis - Humichip")
 
 humi_PCA_plot

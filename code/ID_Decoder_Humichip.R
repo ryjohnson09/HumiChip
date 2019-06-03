@@ -39,7 +39,7 @@ ID_list <- ID_list %>%
 rm(glomics_ID, study_ID) # clean up
 
 # Filter for samples in Humichip data
-humichip_samples <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip.tsv", n_max = 1))) %>%
+humichip_samples <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip_Renormalized.tsv", n_max = 1))) %>%
   select(starts_with("X")) %>%
   colnames()
 

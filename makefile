@@ -15,13 +15,13 @@ list:
 #		data/raw/HumiChip_New/HumiChip-5-LTO.txt
 #		code/Merge_Humichip.R
 # Produces:	data/processed/Merged_humichip.tsv
-data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
-		                     data/raw/HumiChip_New/HumiChip-2-LTO.txt\
-		                     data/raw/HumiChip_New/HumiChip-3-LTO.txt\
-		                     data/raw/HumiChip_New/HumiChip-4-LTO.txt\
-		                     data/raw/HumiChip_New/HumiChip-5-LTO.txt\
-  		           	     code/Merge_Humichip.R
-	R -e "source('code/Merge_Humichip.R', echo=T)"
+#data/processed/Merged_humichip.tsv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
+#		                     data/raw/HumiChip_New/HumiChip-2-LTO.txt\
+#		                     data/raw/HumiChip_New/HumiChip-3-LTO.txt\
+#		                     data/raw/HumiChip_New/HumiChip-4-LTO.txt\
+#		                     data/raw/HumiChip_New/HumiChip-5-LTO.txt\
+#  		           	     code/Merge_Humichip.R
+#	R -e "source('code/Merge_Humichip.R', echo=T)"
 
 
 
@@ -43,13 +43,13 @@ data/processed/Merged_humichip_Renormalized.tsv : data/raw/HumiChip_ReNormalized
 #               data/raw/HumiChip_New/HumiChip-5-LTO.txt
 #               code/array_run.R
 # Produces:     data/processed/array_runs.csv
-data/processed/array_runs.csv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
-                                data/raw/HumiChip_New/HumiChip-2-LTO.txt\
-                                data/raw/HumiChip_New/HumiChip-3-LTO.txt\
-                                data/raw/HumiChip_New/HumiChip-4-LTO.txt\
-                                data/raw/HumiChip_New/HumiChip-5-LTO.txt\
-                                code/array_run.R
-	R -e "source('code/array_run.R', echo=T)"
+#data/processed/array_runs.csv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
+#                                data/raw/HumiChip_New/HumiChip-2-LTO.txt\
+#                                data/raw/HumiChip_New/HumiChip-3-LTO.txt\
+#                                data/raw/HumiChip_New/HumiChip-4-LTO.txt\
+#                                data/raw/HumiChip_New/HumiChip-5-LTO.txt\
+#                                code/array_run.R
+#	R -e "source('code/array_run.R', echo=T)"
 
 
 # Create decoder that links Glomics ID's to TrEAT Subject IDs
@@ -59,7 +59,7 @@ data/processed/array_runs.csv : data/raw/HumiChip_New/HumiChip-1-LTO.txt\
 # Produces:     data/processed/ID_Decoder.csv
 data/processed/ID_Decoder_Humichip.csv : data/raw/IDCRP_Glomics_Subject_ID_List_11-21-17.xlsx\
                                 	 code/ID_Decoder_Humichip.R\
-					 data/processed/Merged_humichip.tsv
+					 data/processed/Merged_humichip_Renormalized.tsv
 	R -e "source('code/ID_Decoder_Humichip.R', echo=T)"
 	
 	

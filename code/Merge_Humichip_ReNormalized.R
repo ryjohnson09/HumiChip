@@ -9,53 +9,28 @@
 
 library(tidyverse)
 
-# list vector of humichip files
+# vector of humichip files
 humichip_files <- c(
   "data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt"
 )
 
-# Create empty data frame
-humichip_data <- tibble()
+# Read in hchip
+humichip_data <- read_tsv(humichip_files, col_types = cols(`Genbank ID` = col_character(),
+                                                  Gene = col_character(),
+                                                  Organism = col_character(),
+                                                  Lineage = col_character(),
+                                                  Gene_category = col_character(),
+                                                  Subcategory1 = col_character(),
+                                                  Subcategory2 = col_character(),
+                                                  .default = col_double())) %>%
+  select(`Genbank ID`, Gene, Organism, Lineage, Gene_category, 
+         Subcategory1, Subcategory2, starts_with("X"))
 
-# Start loop that will read in each humichip separately
-for (hchip in humichip_files){
-  
-  # If tibble is empty (first occurence)
-  if(is_empty(humichip_data)){
-    
-    # Read in hchip
-    humichip_data <- read_tsv(hchip, col_types = cols(`Genbank ID` = col_character(),
-                                                      Gene = col_character(),
-                                                      Organism = col_character(),
-                                                      Lineage = col_character(),
-                                                      Gene_category = col_character(),
-                                                      Subcategory1 = col_character(),
-                                                      Subcategory2 = col_character(),
-                                                      .default = col_double())) %>%
-      select(`Genbank ID`, Gene, Organism, Lineage, Gene_category, 
-             Subcategory1, Subcategory2, starts_with("X"))
-  } else {
-    
-    # Read in hchip and merge into humichip_data
-    humichip_temp <-  read_tsv(hchip, col_types = cols(`Genbank ID` = col_character(),
-                                                       Gene = col_character(),
-                                                       Organism = col_character(),
-                                                       Lineage = col_character(),
-                                                       Gene_category = col_character(),
-                                                       Subcategory1 = col_character(),
-                                                       Subcategory2 = col_character(),
-                                                       .default = col_double())) %>%
-      select(`Genbank ID`, Gene, Organism, Lineage, Gene_category, 
-             Subcategory1, Subcategory2, starts_with("X"))
-    
-    humichip_data <- full_join(humichip_data, humichip_temp, 
-                               by = c("Genbank ID", "Gene", "Organism", "Lineage", 
-                                      "Gene_category", "Subcategory1", "Subcategory2"))
-  }
-}
 
 # Clean
-rm(humichip_temp, hchip, humichip_files)
+rm(humichip_files)
+
+
 
 # Check that the Genbank ID column has no duplicates
 ensure_no_dups <- sum(duplicated(humichip_data$`Genbank ID`) + 
@@ -118,8 +93,8 @@ humichip_data$Gene_category <- toupper(humichip_data$Gene_category)
 humichip_data$Gene_category <- gsub(pattern = " ", replacement = "_", humichip_data$Gene_category)
 
 # annotation
-humichip_data$annotation <- toupper(humichip_data$annotation)
-humichip_data$annotation <- gsub(pattern = " ", replacement = "_", humichip_data$annotation)
+# humichip_data$annotation <- toupper(humichip_data$annotation)
+# humichip_data$annotation <- gsub(pattern = " ", replacement = "_", humichip_data$annotation)
 
 # Subcategory1
 humichip_data$Subcategory1 <- toupper(humichip_data$Subcategory1)

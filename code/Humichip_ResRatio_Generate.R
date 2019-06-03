@@ -4,16 +4,17 @@
 # Date Created: 7 February 2019
 # Purpose: Determine which genes categories are significantly altered.
 #   This script is highly ammendable depending on what you are looking
-#   at (i.e. country, visit, category, etc.)
+#   at (i.e. country, visit, category, etc.). Updated on 14 May 2019 
+#   to incorporate re-normalized humichip data.
 ######################################################################
 
 library(tidyverse)
 
-countries <- c("Djibouti")
-visits <- c(1,5)
+countries <- c("Kenya", "Honduras", "Djibouti")
+visits <- c(1,21)
 
 ## Load data --------------------------------------------------------------------------------------------
-humichip <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip.tsv")))
+humichip <- suppressMessages(suppressWarnings(read_tsv("data/processed/Merged_humichip_Renormalized.tsv")))
 treat <- suppressMessages(suppressWarnings(read_csv("data/processed/TrEAT_Clinical_Metadata_tidy.csv")))
 ID_Decoder <- suppressMessages(suppressWarnings(read_csv("data/processed/ID_Decoder_Humichip.csv")))
 
@@ -40,16 +41,16 @@ rm(treat)
 
 ## Filter the humichip data to include only samples in treat_filter --------------------------------
 humichip_filtered <- humichip %>% 
-  select_if(colnames(.) %in% c("Genbank.ID", "gene", "species", "lineage",
-                               "annotation", "geneCategory", "subcategory1",
-                               "subcategory2", treat_filter$glomics_ID))
+  select_at(c("Genbank.ID", "Gene", "Organism", "Lineage",
+              "Gene_category", "Subcategory1",
+              "Subcategory2", treat_filter$glomics_ID))
 
 rm(humichip)
 
 ## Convert the Humichip data to relative abundance -------------------------------------------------
 humi_relabun <- humichip_filtered %>%
   # only consider probes with a gene category designation (removes STR_SPE probes)
-  filter(!is.na(geneCategory)) %>%
+  filter(!is.na(Gene_category)) %>%
   # Convert all values to 1 and 0
   mutate_at(vars(starts_with("X")), funs(ifelse(is.na(.), 0, .))) %>% 
   # Convert all values to relative abundance
@@ -59,12 +60,14 @@ rm(humichip_filtered)
 
 ## Summarize Data ----------------------------------------------------------------------------------
 humi_grouped <- humi_relabun %>%
+  # Select specific category?
+  #filter(Subcategory1 == "ANTIBIOTIC_RESISTANCE") %>% 
   # Select grouping column of interest and remove rest
-  select(geneCategory, starts_with("X")) %>%
+  select(Gene_category, starts_with("X")) %>%
   # Make long
-  gather(key = glomics_ID, value = rel_abun_value, -geneCategory) %>%
+  gather(key = glomics_ID, value = rel_abun_value, -Gene_category) %>%
   # Group by category of interest
-  group_by(glomics_ID, geneCategory) %>%
+  group_by(glomics_ID, Gene_category) %>%
   # Calculate total relative abundance for each category
   summarise(category_abundance = sum(rel_abun_value)) %>%
   # Add in metadata
@@ -81,14 +84,14 @@ humi_grouped <- humi_grouped %>%
 
 humi_RR <- humi_grouped %>% 
   # Group by category and visit and Treatment
-  group_by(geneCategory, visit_number) %>% 
+  group_by(Gene_category, visit_number, Treatment) %>% 
   summarise(mean_signal = mean(category_abundance),
             sd_signal = sd(category_abundance),
             n = sum(!is.na(category_abundance))) %>% 
   
   # Spread the signal mean by visit number and Treatment
   ungroup() %>%
-  group_by(geneCategory, visit_number) %>%
+  group_by(Gene_category, visit_number, Treatment) %>%
   spread(visit_number, mean_signal) %>% 
   
   # Rename mean columns
@@ -104,12 +107,12 @@ humi_RR <- humi_grouped %>%
   
   # Compress NAs
   ungroup() %>%
-  group_by(geneCategory) %>%
+  group_by(Gene_category, Treatment) %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
-  filter(n_group1 >= 10) %>%
-  filter(n_group2 >= 10) %>%
+  filter(n_group1 >= 7) %>%
+  filter(n_group2 >= 7) %>%
   
   # Calculate SEM for each mean
   mutate(SEM_group1 = sd_group1 / sqrt(n_group1)) %>%
@@ -128,7 +131,7 @@ humi_RR <- humi_grouped %>%
   mutate(keeper = ifelse(0 > (RR - CI95) & 0 < (RR + CI95), "No", "Yes")) %>%
   
   # Make labels pretty
-  mutate(pretty_cat = str_to_title(geneCategory)) %>%
+  mutate(pretty_cat = str_to_title(Gene_category)) %>%
   mutate(pretty_cat = str_replace_all(pretty_cat, "_"," ")) %>%
   
   # Factor columns
@@ -149,19 +152,20 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
   
   # points and error bar
-  geom_point(aes(x = pretty_cat, y = RR), 
-             size = 4,
+  geom_point(aes(x = pretty_cat, y = RR, color = Treatment), 
+             size = 3,
              position = position_dodge(width = 0.4)) +
   geom_errorbar(aes(ymin = RR - CI95, 
                     ymax = RR + CI95, 
-                    x = pretty_cat),
-                width = 0.25,
+                    x = pretty_cat,
+                    color = Treatment),
+                width = 0.25, 
                 position = position_dodge(width = 0.4)) +
   
   # Group labels
-  annotate(geom = "text", label = "Visit 1", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
+  annotate(geom = "text", label = "Day 1", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
            size = 5, color = "red", fontface = 2) +
-  annotate(geom = "text", label = "Visit 5", x = Inf, y = Inf, hjust = 1, vjust = 1, 
+  annotate(geom = "text", label = "Day 21", x = Inf, y = Inf, hjust = 1, vjust = 1, 
            size = 5, color = "red", fontface = 2) +
   
   # plot labels
@@ -183,5 +187,5 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Humi_genecat_V15_country.png", height = 8, width = 8)
+#ggsave(plot = RR_plot, filename = "results/figures/Humi_AbxRes_V15_tx.png", height = 8, width = 8)
 

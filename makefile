@@ -29,7 +29,7 @@ list:
 # Depends on:	data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt
 #		code/Merge_Humichip_ReNormalized.R
 # Produces:	data/processed/Merged_humichip_Renormalized.tsv
-data/processed/Merged_humichip_Renormalized.tsv : data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt\
+data/processed/Merged_humichip_Renormalized.tsv : data/raw/HumiChip_ReNormalized_Updated/Norm.Riddle.HumiChip.All.Nooutlier.Log.txt\
 						  code/Merge_Humichip_ReNormalized.R
 	R -e "source('code/Merge_Humichip_ReNormalized.R', echo=T)"
 

@@ -11,21 +11,26 @@ library(tidyverse)
 
 # vector of humichip files
 humichip_files <- c(
-  "data/raw/HumiChip_ReNormalized/AllNormLogTogethHumi.txt"
+  "data/raw/HumiChip_ReNormalized_Updated/Norm.Riddle.HumiChip.All.Nooutlier.Log.txt"
 )
 
 # Read in hchip
-humichip_data <- read_tsv(humichip_files, col_types = cols(`Genbank ID` = col_character(),
-                                                  Gene = col_character(),
-                                                  Organism = col_character(),
-                                                  Lineage = col_character(),
-                                                  Gene_category = col_character(),
-                                                  Subcategory1 = col_character(),
-                                                  Subcategory2 = col_character(),
+humichip_data <- read_tsv(humichip_files, col_types = cols(uniqueID = col_character(),
+                                                  gene = col_character(),
+                                                  proteinGI = col_character(),
+                                                  annotation = col_character(),
+                                                  species = col_character(),
+                                                  lineage = col_character(),
+                                                  geneCategory = col_character(),
+                                                  subcategory1 = col_character(),
+                                                  subcategory2 = col_character(),
                                                   .default = col_double())) %>%
-  select(`Genbank ID`, Gene, Organism, Lineage, Gene_category, 
-         Subcategory1, Subcategory2, starts_with("X"))
+  select(uniqueID, gene, species, lineage, geneCategory, subcategory1, subcategory2, starts_with("X"))
 
+# Rename to make compatable with code
+colnames(humichip_data)[1:7] <- c("Genbank ID", "Gene", "Organism", "Lineage", "Gene_category", 
+                                  "Subcategory1", "Subcategory2")
+  
 
 # Clean
 rm(humichip_files)

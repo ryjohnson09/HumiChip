@@ -19,6 +19,33 @@ functional_groups <- c("VIRULENCE", "PURINE_METABOLISM",
                        "GLYCEROLIPID_METABOLISM", "FATTY_ACID_BIOSYNTHESIS", 
                        "RESPIRATION", "N-GLYCAN_DEGRADATION")
 
+subcat_groups <- c("L-LYSINE_SYNTHESIS", "PHENYLALANINE__TYROSINE_AND_TRYPTOPHAN_BIOSYNTHESIS", 
+                   "ANTIBIOTIC_RESISTANCE", "SUCROSE", "CYSTEINE_METABOLISM", "GLUTAMATE", 
+                   "L-ARGININE_SYNTHESIS", "PENTOSE_PHOSPHATE_PATHWAY", 
+                   "PEPTIDOGLYCAN_BIOSYNTHESIS", "STARCH", "PORPHYRIN", "RIBOSE", "UBIQUINONE", 
+                   "PUTRESCINE/SPERMIDINE", "GLUTAMINE", "THREONINE", 
+                   "LIPOPOLYSACCHARIDE_BIOSYNTHESIS", "PYRUVATE", "SELENOAMINO_ACID_METABOLISM", 
+                   "LEUCINE", "TCA_CYCLE", "ALANINE", "BUTYRATE", 
+                   "TWO-COMPONENT_SYSTEM_-_GENERAL__PHENYLALANINE__TYROSINE_AND_TRYPTOPHAN_BIOSYNTHESIS__PANTOTHENATE_A", 
+                   "ISOLEUCINE", "GLUCONATE", "RIBOFLAVIN", "METHIONINE", "WOOD-LJUNGDAHL_PATHWAY", 
+                   "HISTIDINE_METABOLISM", "FRUCTOSE", "CYSTEINE", 
+                   "PHENYLALANINE__TYROSINE_AND_TRYPTOPHAN_BIOSYNTHESIS__CHORISMATE_SYNTHESIS", 
+                   "L-ARGININE_SYNTHESIS_VIA_N-ACETYL-L-CITRULLINE_L-ORNITHINE_SYNTHESIS_VIA_N-ACETYLGLUTAMATE", 
+                   "LACTATE", "ASPARTATE", "THAMINE", "CHORISMATE_SYNTHESIS", 
+                   "GLUTAMATE_METABOLISM__UREA_CYCLE_AND_METABOLISM_OF_AMINO_GROUPS", 
+                   "ARGININE", "AGMATINE_AMIDINOHYDROLASE", "ACETATE", "L-HISTIDINE_SYNTHESIS", "XYLOSE", 
+                   "VITAMIN_B6", "PANTOTHENATE_AND_COA", "CONJUGATED_BIL_SALTS", "MANNOSE", "FOLATE_BIOSYNTHESIS", 
+                   "TRYPTOPHAN", "ARGININE_AND_PROLINE_METABOLISM__UREA_CYCLE_AND_METABOLISM_OF_AMINO_GROUPS", 
+                   "L-PHENYLALANINE_SYNTHESIS__L-TYROSINE_SYNTHESIS", "VALINE", "N-ACETYLGLUCOSAMINE", 
+                   "UREA_CYCLE_AND_METABOLISM_OF_AMINO_GROUPS", "L-ORNITHINE_CARBOXY-LYASE", "PECTIN", 
+                   "MANNAN", "PROPIONATE", "LYSINE", "PANTOTHENATE_AND_COA_BIOSYNTHESIS__VALINE__LEUCINE_AND_ISOLEUCINE_BIOSYNTHESIS", 
+                   "FOLATE", "GLYCINE", "TYROSINE", "ARGININE_AND_PROLINE_METABOLISM", "GLUTATHIONE_METABOLISM", 
+                   "GLUCURONATE", "HISTIDINE", "SELENOCYSTEINE", "ARGININE_AND_PROLINE_METABOLISM__GLUTAMATE_METABOLISM", 
+                   "ENTNER-DOUDOROFF", "LYSINE_DEGRADATION__ALKALOID_BIOSYNTHESIS_II", "BIOTIN", 
+                   "GALACTOSE", "GLYCINE__SERINE_AND_THREONINE_METABOLISM__L-LYSINE_SYNTHESIS", "ASPARAGINE", 
+                   "ALANINE_AND_ASPARTATE_METABOLISM_BETA-ALANINE_METABOLISM_GLUTAMATE_METABOLISM_TAURINE_AND_HYPOTAURI", 
+                   "GLYCINE__SERINE_AND_THREONINE_METABOLISM", "ARABINOSE", "FUCOSE", "CELLULOSE")
+
 ## Define UI ----------------------------------------
 shinyUI(fluidPage(
   
@@ -113,7 +140,8 @@ shinyUI(fluidPage(
                   selectInput('probe_type', 'Probe Type:', choices = c("Functional", "Strain/Species", "All"), 
                               selected = "All"),
                   checkboxGroupInput("Gene_category", "Gene Category:", selected = functional_groups,
-                                     choices = functional_groups)
+                                     choices = functional_groups),
+                  selectInput('subcat', "Subcategory:", choices = c("All", subcat_groups), selected = "All")
   )),
   
   # Ordination Type

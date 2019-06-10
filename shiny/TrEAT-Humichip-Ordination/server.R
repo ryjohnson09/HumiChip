@@ -247,12 +247,15 @@ shinyServer(function(input, output){
   ## Probe Filtering ---------------------------------------------------------
   humi_probes_filtered <- reactive({
     
-    if(input$probe_type == "Functional"){
+    if(input$probe_type == "Functional" & input$subcat == "All"){
       # Ensure that at least one functional group is selected
       validate(need(input$Gene_category, 'Please select at least one Functional Group'))
       
       humichip %>%
         filter(Gene_category %in% input$Gene_category)
+    } else if (input$probe_type == "Functional" & input$subcat != "All"){
+      humichip %>%
+        filter(Subcategory1 == input$subcat)
     } else if (input$probe_type == "Strain/Species"){
       humichip %>%
         filter(Gene == "STR_SPE")

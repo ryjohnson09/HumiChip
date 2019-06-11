@@ -217,6 +217,9 @@ treat_clin <- treat_clin %>%
     ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation %in% c(2,3,4), "moderate",
     ifelse(Number_of_loose_liquid_stools_in_last_8_hours_prior_to_presentation >= 5, "severe", NA)))) %>% 
   
+  mutate(Impact = 
+           ifelse(Impact_of_illness_on_activity_level == 0, "No_impact", "Impacted")) %>% 
+  
   mutate(ESBL_either =
            ifelse(ESBL_V1 == "Positive" | ESBL_V5 == "Positive", "Positive",
            ifelse(ESBL_V1 == "Negative" & ESBL_V5 == "Negative", "Negative", NA)))

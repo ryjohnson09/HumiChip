@@ -156,9 +156,9 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
                 position = position_dodge(width = 0.4)) +
   
   # Group labels
-  annotate(geom = "text", label = "Djibouti", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
+  annotate(geom = "text", label = "Impact", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
            size = 5, color = "red", fontface = 2) +
-  annotate(geom = "text", label = "Kenya", x = Inf, y = Inf, hjust = 1, vjust = 1, 
+  annotate(geom = "text", label = "No Impact", x = Inf, y = Inf, hjust = 1, vjust = 1, 
            size = 5, color = "red", fontface = 2) +
   
   # plot labels

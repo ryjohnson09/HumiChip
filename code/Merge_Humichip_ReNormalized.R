@@ -86,7 +86,9 @@ colnames(humichip_data) <- str_replace(string = colnames(humichip_data),
 
 ## Remove samples that are excluded from the study ----------------------------
 humichip_data <- humichip_data %>%
-  select(-X10) # 48-2406
+  select(-X10) %>%  # 48-2406 (Removed due to pill vomitting)
+  select(-X66) %>% # Removed due to low biomass
+  select(-X319) # Removed due to low biomass
 
 
 

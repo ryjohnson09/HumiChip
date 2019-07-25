@@ -131,9 +131,10 @@ humi_PCA_plot <- humi_PCA_base +
   ylab(paste0("PC2(", round(ord_prop_expl[[2]], 2), "%)")) +
   geom_point(aes(x = PC1, 
                  y = PC2, 
-                 color = Impact_of_illness_on_activity_level),
+                 color = Impact),
              alpha = 1, size = point_size, fill = "black") +
-  stat_ellipse(aes(x = PC1, y = PC2, color = Impact_of_illness_on_activity_level), 
+  scale_color_discrete(labels = c("Impacted", "No Impact")) +
+  stat_ellipse(aes(x = PC1, y = PC2, color = Impact), 
                    level = 0.75, size = 1.5, linetype = "dashed")
 
 humi_PCA_plot

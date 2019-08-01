@@ -83,12 +83,23 @@ colnames(humichip_data) <- str_replace(string = colnames(humichip_data),
 
 
 
-
 ## Remove samples that are excluded from the study ----------------------------
 humichip_data <- humichip_data %>%
   select(-X10) %>%  # 48-2406 (Removed due to pill vomitting)
   select(-X66) %>% # Removed due to low biomass
   select(-X319) # Removed due to low biomass
+
+
+## Scale the data by dividing each value by the mean --------------------------
+humichip_mean <- humichip_data %>% 
+  select(starts_with("X")) %>% 
+  as.matrix() %>% 
+  mean(., na.rm = TRUE)
+
+humichip_data <- humichip_data %>% 
+  mutate_at(vars(starts_with("X")), list(~./humichip_mean))
+  
+
 
 
 

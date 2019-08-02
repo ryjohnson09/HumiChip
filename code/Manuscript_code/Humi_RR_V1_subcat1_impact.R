@@ -168,6 +168,7 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
   # plot labels
   labs(y = "Response Ratio",
        x = "") +
+  scale_x_discrete(position = "left") +
   
   theme_linedraw() +
   coord_flip() +
@@ -186,6 +187,6 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 RR_plot
 
 ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_impact.png", 
-       height = 8, 
-       width = 8)
+       height = 12, 
+       width = 7)
 

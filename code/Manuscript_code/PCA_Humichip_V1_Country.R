@@ -122,6 +122,7 @@ humi_PCA_base <-
       axis.title.y = element_text(size = axis_title_size),
       plot.title = element_text(size = title_size, face = "bold"),
       legend.text = element_text(size = legend_text_size),
+      legend.position = "bottom",
       legend.title = element_blank()) +
     guides(fill = guide_legend(override.aes = list(size=7)))
 
@@ -137,4 +138,6 @@ humi_PCA_plot <- humi_PCA_base +
 
 humi_PCA_plot
 
-ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/Humi_V1_Country_PCA.png", height = 8, width = 9)
+ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/Humi_V1_Country_PCA.png", 
+       height = 7, 
+       width = 8)

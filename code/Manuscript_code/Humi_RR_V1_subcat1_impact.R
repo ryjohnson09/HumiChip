@@ -58,11 +58,11 @@ humi_grouped <- humi_relabun %>%
   # Select specific category?
   #filter(Subcategory1 == "ANTIBIOTIC_RESISTANCE") %>% 
   # Select grouping column of interest and remove rest
-  select(Subcategory1, starts_with("X")) %>%
+  select(Gene_category, Subcategory1, starts_with("X")) %>%
   # Make long
-  gather(key = glomics_ID, value = rel_abun_value, -Subcategory1) %>%
+  gather(key = glomics_ID, value = rel_abun_value, -Subcategory1, -Gene_category) %>%
   # Group by category of interest
-  group_by(glomics_ID, Subcategory1) %>%
+  group_by(glomics_ID, Gene_category, Subcategory1) %>%
   # Calculate total relative abundance for each category
   summarise(category_abundance = sum(rel_abun_value)) %>%
   # Add in metadata
@@ -78,14 +78,14 @@ humi_grouped <- humi_grouped %>%
 
 humi_RR <- humi_grouped %>% 
   # Group by Subcategory1 and Impact
-  group_by(Subcategory1, Impact) %>% 
+  group_by(Gene_category, Subcategory1, Impact) %>% 
   summarise(mean_signal = mean(category_abundance),
             sd_signal = sd(category_abundance),
             n = sum(!is.na(category_abundance))) %>% 
   
   # Spread the signal mean by Impact
   ungroup() %>%
-  group_by(Subcategory1, Impact) %>%
+  group_by(Gene_category, Subcategory1, Impact) %>%
   spread(Impact, mean_signal) %>% 
   
   # Rename mean columns
@@ -101,7 +101,7 @@ humi_RR <- humi_grouped %>%
   
   # Compress NAs
   ungroup() %>%
-  group_by(Subcategory1) %>%
+  group_by(Gene_category, Subcategory1) %>%
   summarise_all(funs(sum(., na.rm = T))) %>% 
   
   # Must have at least __ observations in each subcategory
@@ -126,17 +126,21 @@ humi_RR <- humi_grouped %>%
   
   # Make labels pretty
   mutate(pretty_cat = str_to_title(Subcategory1)) %>%
+  mutate(pretty_genecat = str_to_title(Gene_category)) %>% 
   mutate(pretty_cat = str_replace_all(pretty_cat, "_"," ")) %>%
+  mutate(pretty_genecat = str_replace_all(pretty_genecat, "_"," ")) %>%
   
   # Factor columns
-  mutate(pretty_cat = fct_reorder(pretty_cat, RR)) %>%
+  #mutate(pretty_cat = fct_reorder(pretty_cat, RR)) %>%
   ungroup()
 
 ## Remove any cateogories where the mean was below threshold ----------------
 humi_RR_filtered <- humi_RR %>% 
   filter(group1_mean > 0.01) %>% 
   filter(group2_mean > 0.01) %>% 
-# Remove an non-significant categories?
+  # Remove any NA categories from subcats
+  filter(!is.na(Subcategory1)) %>% 
+  # Remove an non-significant categories?
   filter(keeper == "Yes")
 
 
@@ -156,18 +160,18 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
                 position = position_dodge(width = 0.4)) +
   
   # Group labels
-  annotate(geom = "text", label = "Impact", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
-           size = 5, color = "red", fontface = 2) +
-  annotate(geom = "text", label = "No Impact", x = Inf, y = Inf, hjust = 1, vjust = 1, 
-           size = 5, color = "red", fontface = 2) +
+  # annotate(geom = "text", label = "Impact", x = Inf, y = -Inf, hjust = 0, vjust = 1,
+  #          size = 5, color = "red", fontface = 2) +
+  # annotate(geom = "text", label = "No Impact", x = Inf, y = Inf, hjust = 1, vjust = 1,
+  #          size = 5, color = "red", fontface = 2) +
   
   # plot labels
-  labs(title = "Response Ratio",
-       x = "Gene Category",
-       y = "Response Ratio") +
+  labs(y = "Response Ratio",
+       x = "") +
   
-  theme_minimal() +
+  theme_linedraw() +
   coord_flip() +
+  facet_wrap(~pretty_genecat, ncol = 1, scales = "free_y") +
   theme(
     axis.title.x = element_text(size = 15),
     axis.title.y = element_text(size = 15),
@@ -175,10 +179,13 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
     axis.text.y = element_text(size = 12),
     plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5),
-    plot.caption = element_text(hjust = 0.5)
+    plot.caption = element_text(hjust = 0.5),
+    strip.text = element_text(size = 12)
   )
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_impact.png", height = 8, width = 8)
+ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_impact.png", 
+       height = 8, 
+       width = 8)
 

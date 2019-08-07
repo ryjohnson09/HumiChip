@@ -188,5 +188,5 @@ RR_plot
 
 ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V14_subcat1_visit.png", 
        height = 5, 
-       width = 6)
+       width = 7)
 

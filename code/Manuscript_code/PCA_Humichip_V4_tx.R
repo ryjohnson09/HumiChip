@@ -1,16 +1,16 @@
 ##################################################################
-# Name: PCA_Humichip_V1_Country.R
+# Name: PCA_Humichip_V4_tx.R 
 # Author: Ryan Johnson
-# Date Created: 11 June 2019
-# Purpose: Perform PCA on Humichip Data, visit 1 samples, color
-#   by country
+# Date Created: 7 August 2019
+# Purpose: Perform PCA on Humichip Data, visit 4, colored
+#   by tx group
 ##################################################################
 
 library(tidyverse)
 library(vegan)
 
 probe_type <- "Functional"
-visits <- c(1)
+visits <- c(4)
 
 
 ## Read in data -----------------------------------------------------------------------------------------
@@ -63,10 +63,10 @@ humi_matrix <- humi_probes_filtered %>%
   # Set NA's to 0 and values not NA to original value
   select(starts_with("X")) %>%
   mutate_all(list(~ifelse(is.na(.), 0, .)))
-  
+
 # Remove rows that equal 0
 humi_matrix <- humi_matrix[rowSums(humi_matrix) != 0,]
-  
+
 # Return matrix
 humi_matrix <- as.matrix(humi_matrix)
 
@@ -88,9 +88,9 @@ ord_prop_expl <- summary(eigenvals(humi_PCA))[2,] * 100
 
 ## Merge Ordination Analysis with Metadata --------------------------------------
 humi_PCA_metadata <- humi_coordinates %>%
-    # Add study ID's
-    full_join(., treat_filter, by = "glomics_ID")
-    
+  # Add study ID's
+  full_join(., treat_filter, by = "glomics_ID")
+
 
 
 ## Plot ---------------------------------------------------------------------------------
@@ -111,17 +111,17 @@ point_size <- 4
 # Set up base plot
 humi_PCA_base <- 
   ggplot(humi_PCA_metadata) +
-    theme_minimal() +
-    theme(
-      axis.title.x = element_text(size = axis_title_size),
-      axis.text.x = element_text(size = axis_text_size, hjust = 1),
-      axis.text.y = element_text(size = axis_text_size),
-      axis.title.y = element_text(size = axis_title_size),
-      plot.title = element_text(size = title_size, face = "bold"),
-      legend.text = element_text(size = legend_text_size),
-      legend.position = "bottom",
-      legend.title = element_blank()) +
-    guides(fill = guide_legend(override.aes = list(size=7)))
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(size = axis_title_size),
+    axis.text.x = element_text(size = axis_text_size, hjust = 1),
+    axis.text.y = element_text(size = axis_text_size),
+    axis.title.y = element_text(size = axis_title_size),
+    plot.title = element_text(size = title_size, face = "bold"),
+    legend.text = element_text(size = legend_text_size),
+    legend.position = "bottom",
+    legend.title = element_blank()) +
+  guides(fill = guide_legend(override.aes = list(size=7)))
 
 # PCA Plot
 humi_PCA_plot <- humi_PCA_base +
@@ -129,12 +129,12 @@ humi_PCA_plot <- humi_PCA_base +
   ylab(paste0("PC2(", round(ord_prop_expl[[2]], 2), "%)")) +
   geom_point(aes(x = PC1, 
                  y = PC2, 
-                 color = country),
+                 color = Treatment),
              alpha = 1, size = point_size, fill = "black") +
-  stat_ellipse(aes(x = PC1, y = PC2, color = country), level = 0.75, size = 1.5, linetype = "dashed")
+  stat_ellipse(aes(x = PC1, y = PC2, color = Treatment), level = 0.75, size = 1.5, linetype = "dashed")
 
 humi_PCA_plot
 
-ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/Humi_V1_Country_PCA.png", 
+ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/Humi_V4_tx_PCA.png", 
        height = 7, 
        width = 8)

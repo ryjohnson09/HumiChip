@@ -1,11 +1,11 @@
 ######################################################################
-# Name: Humichip_ResRatio_AbxRes.R
+# Name: Humi_RR_AbxRes_V14_tx.R
 # Author: Ryan Johnson
-# Date Created: 7 February 2019
+# Date Created: 12 Sept 2019
 # Purpose: Determine which genes categories are significantly altered
-#          from visit 1 to visit 4/5 by calculating
+#          from visit 1 to visit 4 by calculating
 #          response ratios with 95% CI using relative
-#          abundance. Looking at antibiotic resistance probes
+#          abundance. Looking at antibiotic resistance probes.
 ######################################################################
 
 library(tidyverse)
@@ -17,7 +17,7 @@ ID_Decoder <- suppressMessages(suppressWarnings(read_csv("data/processed/ID_Deco
 
 # Only include matched isolate for visit 1 and visit 4 or 5
 ID_Decoder_matched <- ID_Decoder %>%
-  filter(visit_number %in% c(1,5)) %>%
+  filter(visit_number %in% c(1,4)) %>%
   group_by(study_id) %>% 
   filter(n() == 2) 
 
@@ -154,14 +154,13 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
                 position = position_dodge(width = 0.4)) +
   
   # Group labels
-  annotate(geom = "text", label = "Visit 1", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
-           size = 5, color = "red", fontface = 2) +
-  annotate(geom = "text", label = "Visit 5", x = Inf, y = Inf, hjust = 1, vjust = 1, 
-           size = 5, color = "red", fontface = 2) +
+  # annotate(geom = "text", label = "Visit 1", x = Inf, y = -Inf, hjust = 0, vjust = 1, 
+  #          size = 5, color = "red", fontface = 2) +
+  # annotate(geom = "text", label = "Visit 5", x = Inf, y = Inf, hjust = 1, vjust = 1, 
+  #          size = 5, color = "red", fontface = 2) +
   
   # plot labels
-  labs(title = "Response Ratio",
-       x = "Category",
+  labs(x = "",
        y = "Response Ratio") +
   
   theme_minimal() +
@@ -171,12 +170,12 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
     axis.title.y = element_text(size = 15),
     axis.text.x = element_text(size = 12),
     axis.text.y = element_text(size = 12),
-    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    #plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5),
     plot.caption = element_text(hjust = 0.5)
   )
 
 RR_plot
 
-#ggsave(plot = RR_plot, filename = "results/figures/Humi_AbxGene_tx.png", height = 8, width = 8)
+ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/Humi_RR_AbxRes_V14_tx.png", height = 8, width = 8)
 

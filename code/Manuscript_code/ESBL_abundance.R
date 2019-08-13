@@ -98,16 +98,47 @@ taq_ESBL_stool_matched <- taq_data_select %>%
                             ifelse(taq_value > 0 & taq_value < taq_threshold, 1, 0)))
 
 
+
 ## Calculate Percentage of ESBL positives ----------------------------------
 ESBL_percentages <- taq_ESBL_stool_matched %>%
+  group_by(Target, Visit) %>%
+  summarise(total_ESBLs = sum(detection), total_in_tx = n()) %>% 
+  mutate(percent_ESBL = round((total_ESBLs / total_in_tx) * 100, 2)) %>% 
+  ungroup()
+
+
+
+# Create table (by tx group)
+ESBL_percentages %>% 
+  filter(!Target %in% c("NDM", "KPC")) %>% 
+  mutate(Visit = ifelse(Visit == "Visit_1", "Visit 1", "Visit 5")) %>% 
+  select(-total_ESBLs, -total_in_tx) %>% 
+  spread(Visit, percent_ESBL) %>% 
+  group_by(Target) %>% 
+  gt() %>% 
+  # Add spanner
+  tab_spanner(
+    label = "Percent Detection",
+    columns = vars(
+      "Visit 1", "Visit 5"
+    )
+  )
+
+
+
+
+
+## Calculate Percentage of ESBL positives by tx group ----------------------------------
+ESBL_percentages_tx <- taq_ESBL_stool_matched %>%
   group_by(Treatment, Target, Visit) %>%
   summarise(total_ESBLs = sum(detection), total_in_tx = n()) %>% 
   mutate(percent_ESBL = round((total_ESBLs / total_in_tx) * 100, 2)) %>% 
   ungroup()
 
 
-# Create table
-ESBL_percentages %>% 
+
+# Create table (by tx group)
+ESBL_percentages_tx %>% 
   filter(!Target %in% c("NDM", "KPC")) %>% 
   # Rename columns
   mutate(Treatment = ifelse(Treatment == "AZI", "Azithromycin",

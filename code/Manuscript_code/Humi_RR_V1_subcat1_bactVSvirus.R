@@ -199,5 +199,5 @@ RR_plot
 
 ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_bactVSvirus.png",
        height = 6,
-       width = 7)
+       width = 5)
 

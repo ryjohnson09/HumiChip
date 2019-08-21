@@ -88,7 +88,8 @@ rm(ID_list, humichip_samples) # clean up
 
 # Extract relevant columns from treat DB
 treat_clin <- treat %>% 
-  select(STUDY_ID, 
+  select(STUDY_ID, Age, Sex, Military_affiliation,
+         dplyr::contains("US_subjects"), dplyr::contains("UK_subjects"),
          
          # Diarrhea and Fever
          Diarrhea_classification,
@@ -222,7 +223,22 @@ treat_clin <- treat_clin %>%
   
   mutate(ESBL_either =
            ifelse(ESBL_V1 == "Positive" | ESBL_V5 == "Positive", "Positive",
-           ifelse(ESBL_V1 == "Negative" & ESBL_V5 == "Negative", "Negative", NA)))
+           ifelse(ESBL_V1 == "Negative" & ESBL_V5 == "Negative", "Negative", NA))) %>% 
+  
+  mutate(Race = 
+           ifelse(!is.na(White_US_subjects) | !is.na(White_UK_subjects), "White",
+           ifelse(!is.na(Black_US_subjects) | !is.na(Black_UK_subjects), "Black",
+           ifelse(!is.na(Native_Hawaiian_or_other_pacific_islander_US_subjects) |
+                  !is.na(Asian_US_subjects) |
+                  !is.na(American_Indian_or_Alaskan_Native_US_subjects) |
+                  !is.na(Unknown_or_not_reported_US_subjects) |
+                  !is.na(`Other,_specify_US_subjects`) |
+                  !is.na(`Indo-Asian_UK_subjects`) |
+                  !is.na(Asian_UK_subjects) |
+                  !is.na(Pacific_Islander_UK_subjects) |
+                  !is.na(Nepalese_UK_subjects) |
+                  !is.na(Unknown_or_not_reported_UK_subjects) |
+                  !is.na(`Other,_specify_UK_subjects`), "Other", NA))))
          
 
 ##########################

@@ -38,8 +38,8 @@ all_samples <- treat_filter %>%
                                  quantile(Age, 0.75), ")"),
     
     # Sex
-    `Male, No. (%)` = paste0(sum(Sex == 1), " (",
-                             round((sum(Sex == 1) / N) * 100, 1), ")"),
+    `Male, No. (%)` = paste0(sum(Sex == "Male"), " (",
+                             round((sum(Sex == "Male") / N) * 100, 1), ")"),
     
     # Race
     `White, No. (%)` = paste0(sum(Race == "White"), " (",

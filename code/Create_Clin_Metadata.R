@@ -156,6 +156,8 @@ treat_clin <- treat_clin %>%
   mutate(Diarrhea_classification = 
            ifelse(Diarrhea_classification == 1, "AWD", "Febrile")) %>%
   
+  mutate(Sex = ifelse(Sex == 1, "Male", "Female")) %>% 
+  
   mutate(Fever_present_at_presentation = 
            ifelse(Fever_present_at_presentation == 0, "No", 
                   ifelse(Fever_present_at_presentation == 1, "Yes", NA))) %>%

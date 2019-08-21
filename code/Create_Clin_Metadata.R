@@ -238,7 +238,8 @@ treat_clin <- treat_clin %>%
                   !is.na(Pacific_Islander_UK_subjects) |
                   !is.na(Nepalese_UK_subjects) |
                   !is.na(Unknown_or_not_reported_UK_subjects) |
-                  !is.na(`Other,_specify_UK_subjects`), "Other", NA))))
+                  !is.na(`Other,_specify_UK_subjects`), "Other", NA)))) %>% 
+  select(-contains("US_subjects"), -contains("UK_subjects"))
          
 
 ##########################

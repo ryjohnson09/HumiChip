@@ -166,6 +166,7 @@ shinyUI(fluidPage(
                     "None" = "None",
                     "Visit" = "visit_number",
                     "Country" = "country",
+                    "Race" = "Race",
                     "Treatment" = "Treatment",
                     "Pathogens" = "pathogens",
                     "Impact on Activity" = "Impact_of_illness_on_activity_level",

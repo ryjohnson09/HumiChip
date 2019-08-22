@@ -48,26 +48,34 @@ visit_14 <- treat_number %>%
   filter(n() == 2) %>% 
   filter(visit_number %in% c(1,4)) %>% 
   filter(n() == 2) %>% 
-  nrow()
+  pull(study_id) %>% 
+  unique() %>% 
+  length()
 
 visit_15 <- treat_number %>% 
   group_by(study_id) %>% 
   filter(n() == 2) %>% 
   filter(visit_number %in% c(1,5)) %>% 
   filter(n() == 2) %>% 
-  nrow()
+  pull(study_id) %>% 
+  unique() %>% 
+  length()
 
 visit_45 <- treat_number %>% 
   group_by(study_id) %>% 
   filter(n() == 2) %>% 
   filter(visit_number %in% c(4,5)) %>% 
   filter(n() == 2) %>% 
-  nrow()
+  pull(study_id) %>% 
+  unique() %>% 
+  length()
 
 visit_145 <- treat_number %>% 
   group_by(study_id) %>% 
   filter(n() == 3) %>% 
-  nrow()
+  pull(study_id) %>% 
+  unique() %>% 
+  length()
 
 # Create final table
 visit_groups <- tibble(visit_1, visit_4, visit_5, 

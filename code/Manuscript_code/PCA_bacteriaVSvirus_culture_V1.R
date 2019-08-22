@@ -1,5 +1,5 @@
 ##################################################################
-# Name: PCA_bacteriaVSvirus_V1.R
+# Name: PCA_bacteriaVSvirus_culture_V1.R
 # Author: Ryan Johnson
 # Date Created: 20 Aug 2019
 # Purpose: Functional probe PCA to determine functional
@@ -158,7 +158,7 @@ humi_PCA_plot <- humi_PCA_base +
 
 humi_PCA_plot
 
-ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/PCA_bacteriaVSvirus_V1.png",
+ggsave(plot = humi_PCA_plot, filename = "results/figures/Manuscript_Figures/PCA_bacteriaVSvirus_culture_V1.png",
        height = 7,
        width = 8)
 

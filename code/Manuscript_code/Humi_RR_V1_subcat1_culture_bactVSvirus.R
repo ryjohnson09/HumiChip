@@ -1,5 +1,5 @@
 ######################################################################
-# Name: Humi_RR_V1_subcat1_bactVSvirus.R
+# Name: Humi_RR_V1_subcat1_culture_bactVSvirus.R
 # Author: Ryan Johnson
 # Date Created: 20 Aug 2019
 # Purpose: Functional probe RR to determine functional
@@ -197,7 +197,7 @@ RR_plot <- ggplot(data = humi_RR_filtered) +
 
 RR_plot
 
-ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_bactVSvirus.png",
+ggsave(plot = RR_plot, filename = "results/figures/Manuscript_Figures/RR_V1_subcat1_bactVSvirus_culture.png",
        height = 6,
        width = 5)
 

@@ -117,6 +117,7 @@ humichip_data$Gene_category <- gsub(pattern = " ", replacement = "_", humichip_d
 # Subcategory1
 humichip_data$Subcategory1 <- toupper(humichip_data$Subcategory1)
 humichip_data$Subcategory1 <- gsub(pattern = " ", replacement = "_", humichip_data$Subcategory1)
+humichip_data$Subcategory1 <- gsub(pattern = "THAMINE", replacement = "THIAMINE", humichip_data$Subcategory1)
 
 # Subcategory2
 humichip_data$Subcategory2 <- toupper(humichip_data$Subcategory2)

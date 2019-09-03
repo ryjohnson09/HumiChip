@@ -774,6 +774,38 @@ taq_data <- taq_data %>%
 treat_full <- treat_full %>%
   left_join(., taq_data, by = c("STUDY_ID" = "study_id"))
 
+
+
+## Add ESBL positive or negative by taq column
+treat_taq_V1 <- treat_full %>% 
+  select(ends_with("_either_V1")) %>% 
+  mutate_all(funs(ifelse(. == "No", 0,
+             ifelse(. == "Yes", 1, 
+             ifelse(. == "Not Available", NA, NA))))) %>% 
+  mutate(total_ESBL = rowSums(., na.rm = TRUE)) %>% 
+  mutate(num_na = rowSums(is.na(.))) %>% 
+  mutate(ESBL_pos_V1 = ifelse(total_ESBL > 0, "Positive", 
+                       ifelse(total_ESBL == 0 & num_na > 0, NA, 
+                       ifelse(total_ESBL == 0 & num_na != 6, "Negative", NA)))) %>% 
+  pull(ESBL_pos_V1)
+
+treat_taq_V5 <- treat_full %>% 
+  select(ends_with("_either_V5")) %>% 
+  mutate_all(funs(ifelse(. == "No", 0,
+                  ifelse(. == "Yes", 1, 
+                  ifelse(. == "Not Available", NA, NA))))) %>% 
+  mutate(total_ESBL = rowSums(., na.rm = TRUE)) %>% 
+  mutate(num_na = rowSums(is.na(.))) %>% 
+  mutate(ESBL_pos_V5 = ifelse(total_ESBL > 0, "Positive", 
+                       ifelse(total_ESBL == 0 & num_na > 0, NA, 
+                       ifelse(total_ESBL == 0 & num_na != 6, "Negative", NA)))) %>% 
+  pull(ESBL_pos_V5)
+
+treat_full$ESBL_pos_V1 <- treat_taq_V1
+treat_full$ESBL_pos_V5 <- treat_taq_V5
+  
+  
+
 ## Write to processed data ---------------------------------
 write_csv(treat_full, "data/processed/TrEAT_Clinical_Metadata_tidy.csv")
 
